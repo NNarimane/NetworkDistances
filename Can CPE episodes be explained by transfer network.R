@@ -79,7 +79,9 @@ Week=8
 
 cat(paste("Get Candidate Transmitters for Week 1 to", Week, "by Mechanism\n"))
 NonPermutation=T
-CandidateTransmitters_byWeek_byMechanism=foreach(i=1:Week) %do% getCandidateTransmitters_byWeek_byMechanism(data=data, i)
+# CandidateTransmitters_byWeek_byMechanism=foreach(i=1:Week) %do% getCandidateTransmitters_byWeek_byMechanism(data=data, i)
+# save(CandidateTransmitters_byWeek_byMechanism, file="Results/CandidateTransmitters_byWeek_byMechanism.RData")
+load("Results/CandidateTransmitters_byWeek_byMechanism.RData")
 
 ###################################
 #### STEP 3: GET MIN DISTANCES ####
@@ -99,10 +101,12 @@ if(Weighted){
 cat("Get Min Distances\n")
 if(Weighted){
       cat("Get Weighted Distances for Candidate Transmitters by Mechanism\n")
-      MinimumDistances_PotentialInfector_byWeek_byMechanism=foreach(i=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(i, CandidateTransmitters_byWeek_byMechanism[[i]], weights = weights, algorithm = algorithm)
+      # MinimumDistances_PotentialInfector_byWeek_byMechanism=foreach(i=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(i, CandidateTransmitters_byWeek_byMechanism[[i]], weights = weights, algorithm = algorithm)
+      # save(MinimumDistances_PotentialInfector_byWeek_byMechanism, file="Results/MinimumDistances_PotentialInfector_byWeek_byMechanism.RData")
+      load("Results/MinimumDistances_PotentialInfector_byWeek_byMechanism.RData")
     }else{
-      cat("Get UnWeighted Distances for Candidate Transmitters by Mechanism\n")
-      MinimumDistances_PotentialInfector_byWeek_byMechanism=foreach(i=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(i, CandidateTransmitters_byWeek_byMechanism[[i]], weights = weights, algorithm = algorithm)
+      # cat("Get UnWeighted Distances for Candidate Transmitters by Mechanism\n")
+      # MinimumDistances_PotentialInfector_byWeek_byMechanism=foreach(i=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(i, CandidateTransmitters_byWeek_byMechanism[[i]], weights = weights, algorithm = algorithm)
     }
  
 
@@ -142,6 +146,8 @@ stopCluster(cl)
 print("Cluster stopped")
 registerDoSEQ()
 
+save(AllRuns_CandidateTransmitters_Permutations_byMechanism, file="Results/50 Permutations (Reshuffled Department)/AllRuns_CandidateTransmitters_Permutations_byMechanism.RData")
+
 #########################################################
 #### STEP 4b: GET MINIMUM DISTANCES FROM PREMUATIONS ####
 
@@ -176,6 +182,8 @@ stopCluster(cl)
 print("Cluster stopped")
 registerDoSEQ()
 
+save(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism, file="Results/50 Permutations (Reshuffled Department)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism.RData")
+
 #############################################################
 #### STEP 4c: AVERAGE MINIMUM DISTANCES FROM PREMUATIONS ####
 
@@ -197,7 +205,7 @@ Results$StatSigDiff=Results$WilcoxonPairedRankTestPValues < 0.05
 #If stat. sig. p-value results (TRUE), reject H0 (meaning that the distributions differ)
 
 cat("Save Results\n")
-write.csv(Results, file=paste("Results/Wilcoxon Rank Sum Test Results for Week 1 to",Week,"for", Nruns,"Permutations (Reshuffled Mechanism of Resistance and Importation Status).csv"), row.names = F)
+write.csv(Results, file=paste("Results/50 Permutations (Reshuffled Department)/Wilcoxon Rank Sum Test Results for Week 1 to",Week,"for", Nruns,"Permutations (Reshuffled Department).csv"), row.names = F)
 
 #######################################
 #### INTERPRETATION OF THE RESULTS ####
@@ -218,7 +226,7 @@ cat("Get Proportion Tables\n")
 ProportionTables_byMechanism=get5thQuantiles(Week, MinimumDistances_PotentialInfector_byWeek_byMechanism, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism)
 MeanMinimumDistances_byMechanism=getMeanMinimumDistances(MinimumDistances_PotentialInfector_byWeek_byMechanism, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism)
 ProportionTables_withMinDistances_byMechanism=cbind(ProportionTables_byMechanism[2,], MeanMinimumDistances_byMechanism)
-colnames(ProportionTables_withMinDistances_byMechanism)=c("ProportionPermutationsUnderOriginal5thPercentile", "Original_MeanMinimumDistances_ByNWeeks", "Permutations_MeanMinimumDistances_ByWeeks")
+colnames(ProportionTables_withMinDistances_byMechanism)=c("ProportionOriginalMinDistUnder5thPercentileOfPermutatedMinDist", "Original_MeanMinimumDistances_ByNWeeks", "Permutations_MeanMinimumDistances_ByWeeks")
 
 cat("Save Table\n")
-write.csv(ProportionTables_withMinDistances_byMechanism, file = paste("Results/Proportions and Mean Min Distances Table for Week 1 to",Week,"for", Nruns,"Permutations (Reshuffled Mechanism of Resistance and Importation Status).csv"))
+write.csv(ProportionTables_withMinDistances_byMechanism, file = paste("Results/50 Permutations (Reshuffled Department)/Proportions and Mean Min Distances Table for Week 1 to",Week,"for", Nruns,"Permutations (Reshuffled Department).csv"))

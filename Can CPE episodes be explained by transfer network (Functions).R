@@ -215,6 +215,43 @@ getMinimumDistances_CandidateTransmitters_byWeek=function(i, CandidateTransmitte
   return(MinimumDistances)
 }
 
+getS1_ProportionIncidentEpisodesWithAtLeastOne_CandidateTransmitters_byWeek=function(i, CandidateTransmitters, weights, algorithm){
+  ##############################################################################################
+  #### STEP 3: Calculate Minimum (Network) Distance Between Episode and Candidate Transmitters ####
+  cat("#### STEP 3: Calculate Minimum (Network) Distance Between Episode and Candidate Transmitters ####\n")
+  
+  cat("List of Departments of Episode and Candidate Transmitters\n")
+  Department="Department"
+  CandidateTransmitters_Departments=foreach(i=1:length(CandidateTransmitters)) %do% {
+    CandidateTransmitters_Departments=CandidateTransmitters[[i]]
+    CandidateTransmitters_Departments[Department]
+  }
+  
+  cat("Distance Matrix Between Departments\n")
+  Distances_Matrix=as.data.frame(distances(directed.graph_Dept, weights = weights, algorithm = algorithm))
+  
+  cat("Distance Between Department of Episode and Candidate Transmitters Departments\n")
+  CandidateTransmitters_Departments_MinDistances=foreach(i=1:length(CandidateTransmitters_Departments)) %do% {
+    CandidateTransmitters_Departments_Subset=CandidateTransmitters_Departments[[i]]
+    if(nrow(CandidateTransmitters_Departments_Subset) > 0){
+      Distances=foreach(j=1:nrow(CandidateTransmitters_Departments_Subset), .combine='c') %do% {
+        Distances=Distances_Matrix[data[i,Department],CandidateTransmitters_Departments_Subset[j,Department]]
+      } 
+    }else{
+      Distances=NA
+    }
+    
+  }
+  
+  cat("Get Minimum Distance Between Episode and 1 Potential Infector\n")
+  MinDistance=lapply(CandidateTransmitters_Departments_MinDistances, function(x) min(x))
+  
+  cat(paste("Unlist, Remove Inf, Minimum Distances", i, "\n"))
+  MinimumDistances=unlist(MinDistance)
+  
+  return(MinimumDistances)
+}
+
 ###################################
 #### GET PERMUTATIONS FUNCTION ####
 getPermutatedData=function(data, Week){
@@ -225,12 +262,14 @@ getPermutatedData=function(data, Week){
     data[data[,2] < CaseDate 
          & data[,2] >= (CaseDate-Week*7) 
          & data$Episode != CaseID,]})
-  cat("For each list of possible candidates, shuffle rows for Imported Status and Mechanism of Resistance and keep dates and Department un-shuffled\n")
+  # cat("For each list of possible candidates, shuffle rows for Imported Status and Mechanism of Resistance and keep dates and Department un-shuffled\n")
+  cat("For each list of possible candidates, shuffle rows for Departments\n")
   dataPermutations=foreach(i=1:length(dataPossibleCandidates)) %do% {
     if(nrow(dataPossibleCandidates[[i]]) > 0){
       dataPossibilities=dataPossibleCandidates[[i]]
       columnorder=names(dataPossibilities)
-      dataPermutation=cbind(dataPossibilities[,c(1:3,6:7,9,14:15)], dataPossibilities[sample(1:nrow(dataPossibilities)),c(4:5,8,10:13,16:21)])
+      # dataPermutation=cbind(dataPossibilities[,c(1:3,6:7,9,14:15)], dataPossibilities[sample(1:nrow(dataPossibilities)),c(4:5,8,10:13,16:21)])
+      dataPermutation=cbind(dataPossibilities[,c(1:13,16:21)], dataPossibilities[sample(1:nrow(dataPossibilities)),c(14:15)])
       dataPermutation=dataPermutation[,columnorder]
     }else{
       dataPossibleCandidates[[i]]=dataPossibleCandidates[[i]]
@@ -322,9 +361,9 @@ get5thQuantiles=function(Week, MinimumDistances, AllRandomMinimumDistances){
   RandomSimulationsByDays_Dataframes=foreach(i=1:length(RandomSimulationsByDays_Clean)) %do% data.frame(RandomSimulationsByDays_Clean[[i]], row.names = NULL) 
   cat("Get proportion cases that have values smaller than the 5th percentile of simulations for each week N\n")
   ProportionsTable=foreach(n=1:Week, .combine = "cbind") %do% {
-    day=foreach(i=1:nrow(data)) %do% (MinimumDistances[[n]][i] <= quantile(RandomSimulationsByDays_Dataframes[[n]][i,], 0.05, na.rm=T)[[1]])
-    day=unlist(day)
-    resultsTable=prop.table(table(day))
+    week=foreach(i=1:nrow(data)) %do% (MinimumDistances[[n]][i] <= quantile(RandomSimulationsByDays_Dataframes[[n]][i,], 0.05, na.rm=T)[[1]])
+    week=unlist(week)
+    resultsTable=prop.table(table(week))
   }
   return(ProportionsTable)
 }
