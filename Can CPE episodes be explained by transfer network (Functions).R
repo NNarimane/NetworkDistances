@@ -70,7 +70,7 @@ getCPEData=function(){
 
 ##########################################################
 #### GET CANDIDATE TRANSMITTERS BY MECHANISM OR CLASS ####
-getCandidateTransmitters_byWeek_byMechanism=function(Week){
+getCandidateTransmitters_byWeek_byMechanism=function(data, Week){
   
   ##############################################
   #### STEP 2: Find All Candidate Transmitters ####
@@ -78,45 +78,58 @@ getCandidateTransmitters_byWeek_byMechanism=function(Week){
   
   #A potential infector
   # - occured N days/Weeks before episode (7 days, 14 days, 21 days, 28 days, 35 days, 42 days)
-  # - shares the same mechanism OR shares same class (test mechanism)
+  # - shares the same mechanism OR shares same class 
   # - in the same bacteria?? (will not test yet)
   
   cat(paste("Set Number of Preceeding Weeks Equal to", Week, "\n"))
   Week=Week
   
-  cat("Criterion 1: Episode Occured N Weeks Before\n")
-  CandidateTransmitters_byWeeks=lapply(1:nrow(data), function(i){data[data[,2]<data[i,2] & data[,2]> (data[i,2]-Week*7),]})
+  if(NonPermutation){
+    cat("Criterion 1: Episode Occured N Weeks Before\n")
+    CandidateTransmitters_byWeeks=lapply(1:nrow(data), function(i){
+      CaseDate=data[i,2]
+      CaseID=data[i,1]
+      data[data[,2] < CaseDate 
+           & data[,2] >= (CaseDate-Week*7) 
+           & data$Episode != CaseID,]})
+  }else{
+    CandidateTransmitters_byWeeks=getPermutatedData(data, Week)
+    # CandidateTransmitters_byWeeks=foreach(i=length(CandidateTransmitters_byWeeks)) %do% {
+    #   if(is.null(CandidateTransmitters_byWeeks[[i]]))
+    #   CandidateTransmitters_byWeeks[[i]]=as.data.frame(matrix(ncol = 21, nrow = 0))
+    # }
+
+  }
   
   cat("Criterion 2: Imported Episodes Do Not Have Potential Infectors\n")
   ImportationStatus="Imported"
   CandidateTransmitters_byWeeks_ImportationCorrection=foreach(i=1:length(CandidateTransmitters_byWeeks)) %do% {
-    ConditionMet=data[i,ImportationStatus] == "N" 
-    if(ConditionMet){
+    if(data[i,ImportationStatus] == "N"){
       CandidateTransmitters_byWeeks[[i]]=CandidateTransmitters_byWeeks[[i]]
     }
   }
   CandidateTransmitters_byWeeks_ImportationCorrection[sapply(CandidateTransmitters_byWeeks_ImportationCorrection, is.null)] = NULL
-  
+    
   cat("Criterion 3: Same CPE mechanism of resistance\n")
   FirstResistanceMechanism="FirstMechanism"
   CandidateTransmitters_byFirstMechanism=foreach(i=1:length(CandidateTransmitters_byWeeks_ImportationCorrection)) %do% {
-    CandidateTransmitters=CandidateTransmitters_byWeeks_ImportationCorrection[[i]]
-    CandidateTransmitters[CandidateTransmitters[,FirstResistanceMechanism] %in% data[i,FirstResistanceMechanism],]
-  }
+      CandidateTransmitters=CandidateTransmitters_byWeeks_ImportationCorrection[[i]]
+      CandidateTransmitters[CandidateTransmitters[,FirstResistanceMechanism] %in% data[i,FirstResistanceMechanism],]
+    }
   SecondResistanceMechanism="SecondMechanism"
   CandidateTransmitters_bySecondMechanism=foreach(i=1:length(CandidateTransmitters_byFirstMechanism)) %do% {
-    CandidateTransmitters=CandidateTransmitters_byFirstMechanism[[i]]
-    CandidateTransmitters[CandidateTransmitters[,SecondResistanceMechanism] %in% data[i,SecondResistanceMechanism],]
-  }
+      CandidateTransmitters=CandidateTransmitters_byFirstMechanism[[i]]
+      CandidateTransmitters[CandidateTransmitters[,SecondResistanceMechanism] %in% data[i,SecondResistanceMechanism],]
+    }
   ThirdResistanceMechanism="ThirdMechanism"
   CandidateTransmitters_byThirdMechanism=foreach(i=1:length(CandidateTransmitters_bySecondMechanism)) %do% {
-    CandidateTransmitters=CandidateTransmitters_bySecondMechanism[[i]]
-    CandidateTransmitters[CandidateTransmitters[,ThirdResistanceMechanism] %in% data[i,ThirdResistanceMechanism],]
-  }
+      CandidateTransmitters=CandidateTransmitters_bySecondMechanism[[i]]
+      CandidateTransmitters[CandidateTransmitters[,ThirdResistanceMechanism] %in% data[i,ThirdResistanceMechanism],]
+    }
   
   return(CandidateTransmitters_byThirdMechanism)
 }
-getCandidateTransmitters_byWeek_byClass=function(Week){
+getCandidateTransmitters_byWeek_byClass=function(data, Week){
   
   ##############################################
   #### STEP 2: Find All Potential Infectors ####
@@ -124,7 +137,7 @@ getCandidateTransmitters_byWeek_byClass=function(Week){
   
   #A potential infector
   # - occured N days/Weeks before episode (7 days, 14 days, 21 days, 28 days, 35 days, 42 days)
-  # - shares the same mechanism OR shares same class (test mechanism)
+  # - shares the same mechanism OR shares same class
   # - in the same bacteria?? (will not test yet)
   
   cat(paste("Set Number of Preceeding Days Equal to", Week, "\n"))
@@ -167,8 +180,8 @@ getCandidateTransmitters_byWeek_byClass=function(Week){
 #### GET MINIMUM DISTANCE OF CANDIDATE TRANSMITTERS ####
 getMinimumDistances_CandidateTransmitters_byWeek=function(i, CandidateTransmitters, weights, algorithm){
   ##############################################################################################
-  #### STEP 3: Calculate Minimum (Network) Distance Between Episode and Potential Infectors ####
-  cat("#### STEP 3: Calculate Minimum (Network) Distance Between Episode and Potential Infectors ####\n")
+  #### STEP 3: Calculate Minimum (Network) Distance Between Episode and Candidate Transmitters ####
+  cat("#### STEP 3: Calculate Minimum (Network) Distance Between Episode and Candidate Transmitters ####\n")
   
   cat("List of Departments of Episode and Candidate Transmitters\n")
   Department="Department"
@@ -202,30 +215,54 @@ getMinimumDistances_CandidateTransmitters_byWeek=function(i, CandidateTransmitte
   return(MinimumDistances)
 }
 
-############################################################
-#### GET CANDIATE TRANSMITTERS FROM RANDOM PERMUTATIONS ####
-getCandidateTransmitters_Permutations_byWeek=function(Week){
-  cat("Permutate Data: Mechanisms & Department\n")
-  Permutation=cbind(data[,c(1:4,6:13)], data[sample(1:nrow(data)),c(5,14:21)])
-  
-  cat(paste("Set Number of Preceeding Weeks Equal to", Week, "\n"))
-  Week=Week
-  
-  cat("Criterion 1: Candidate Transmitter Occured at least N Weeks Before Episode\n")
-  Candidate_Transmitter_Permutations_byWeek=foreach(i=1:nrow(data)) %do% data[which(data$DateEpisode >= data[i,2]-Week*7 & data$DateEpisode < data[i,2]),]
-  
-  cat("Criterion 2: Imported Episodes Do Not Have Potential Infectors\n")
-  ImportationStatus="Imported"
-  Candidate_Transmitter_Permutations_byWeek_ImportationCorrection=foreach(i=1:length(Candidate_Transmitter_Permutations_byWeek)) %do% {
-    ConditionMet=data[i,ImportationStatus] == "N" 
-    if(ConditionMet){
-      Candidate_Transmitter_Permutations_byWeek[[i]]=Candidate_Transmitter_Permutations_byWeek[[i]]
+###################################
+#### GET PERMUTATIONS FUNCTION ####
+getPermutatedData=function(data, Week){
+  cat("Get possible candidate transmitters for each incident case/episode\n")
+  dataPossibleCandidates=lapply(1:nrow(data), function(i){
+    CaseDate=data[i,2]
+    CaseID=data[i,1]
+    data[data[,2] < CaseDate 
+         & data[,2] >= (CaseDate-Week*7) 
+         & data$Episode != CaseID,]})
+  cat("For each list of possible candidates, shuffle rows for Imported Status and Mechanism of Resistance and keep dates and Department un-shuffled\n")
+  dataPermutations=foreach(i=1:length(dataPossibleCandidates)) %do% {
+    if(nrow(dataPossibleCandidates[[i]]) > 0){
+      dataPossibilities=dataPossibleCandidates[[i]]
+      columnorder=names(dataPossibilities)
+      dataPermutation=cbind(dataPossibilities[,c(1:3,6:7,9,14:15)], dataPossibilities[sample(1:nrow(dataPossibilities)),c(4:5,8,10:13,16:21)])
+      dataPermutation=dataPermutation[,columnorder]
+    }else{
+      dataPossibleCandidates[[i]]=dataPossibleCandidates[[i]]
     }
   }
-  Candidate_Transmitter_Permutations_byWeek_ImportationCorrection[sapply(Candidate_Transmitter_Permutations_byWeek_ImportationCorrection, is.null)] = NULL
-  
-  return(Candidate_Transmitter_Permutations_byWeek_ImportationCorrection)
+  return(dataPermutations)
 }
+
+############################################################
+#### GET CANDIATE TRANSMITTERS FROM RANDOM PERMUTATIONS ####
+# getCandidateTransmitters_Permutations_byWeek=function(data, Week){
+#   cat("Permutate Data: Mechanisms & Department\n")
+#   Permutation=cbind(data[,c(1:4,6:13)], data[sample(1:nrow(data)),c(5,14:21)])
+#   
+#   cat(paste("Set Number of Preceeding Weeks Equal to", Week, "\n"))
+#   Week=Week
+#   
+#   cat("Criterion 1: Candidate Transmitter Occured at least N Weeks Before Episode\n")
+#   Candidate_Transmitter_Permutations_byWeek=foreach(i=1:nrow(data)) %do% data[which(data$DateEpisode >= data[i,2]-Week*7 & data$DateEpisode < data[i,2]),]
+#   
+#   cat("Criterion 2: Imported Episodes Do Not Have Candidate Transmitters\n")
+#   ImportationStatus="Imported"
+#   Candidate_Transmitter_Permutations_byWeek_ImportationCorrection=foreach(i=1:length(Candidate_Transmitter_Permutations_byWeek)) %do% {
+#     ConditionMet=data[i,ImportationStatus] == "N" 
+#     if(ConditionMet){
+#       Candidate_Transmitter_Permutations_byWeek[[i]]=Candidate_Transmitter_Permutations_byWeek[[i]]
+#     }
+#   }
+#   Candidate_Transmitter_Permutations_byWeek_ImportationCorrection[sapply(Candidate_Transmitter_Permutations_byWeek_ImportationCorrection, is.null)] = NULL
+#   
+#   return(Candidate_Transmitter_Permutations_byWeek_ImportationCorrection)
+# }
 
 ###########################
 #### CLEANING FUNCTION ####
@@ -300,7 +337,7 @@ getMeanMinimumDistances=function(MinimumDistances, AllRandomMinimumDistances){
   cat(paste("Min distance means of", Week, "permutations for every Week N\n"))
   RandomSimulationsByDays_MeansByNDays=foreach(i=1:length(RandomSimulationsByDays_RowMeans)) %do% mean(unlist(RandomSimulationsByDays_RowMeans[[i]]), na.rm = T)
   
-  cat("Mean distance for every Week N for potential infectors\n")
+  cat("Mean distance for every Week N for candidate transmitters\n")
   MinimumDistances_Clean=foreach(i=1:length(MinimumDistances)) %do% CleaningFunction2(MinimumDistances[[i]])
   MinimumDistances_MeansByNDays=foreach(i=1:length(MinimumDistances_Clean)) %do% mean(unlist(MinimumDistances_Clean[[i]]), na.rm = T)
   

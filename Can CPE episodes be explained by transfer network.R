@@ -20,9 +20,9 @@ envNN=T
 envNNwindows=T
 if(envNN){
   if(envNNwindows){
-    currentwd=setwd("C:/Users/Narimane/Dropbox/CPE Transmission Chains/")
+    currentwd=setwd("C:/Users/Narimane/Dropbox/Network Distances and CPE Episodes/")
   }else{
-    currentwd=setwd("/Users/narimanenekkab/Dropbox/CPE Transmission Chains/")
+    currentwd=setwd("/Users/narimanenekkab/Dropbox/Network Distances and CPE Episodes/")
   }
 }else{
   currentwd=setwd("/Users/pascalcrepey/Google Drive/1-EPC/stageNN/") 
@@ -31,7 +31,7 @@ if(envNN){
 ###################################
 #### GET FUNCTIONS SOURCE CODE ####
 
-source("CPETransmissionChains/Generation Time Sensitivity Analysis Functions.R", 
+source("NetworkDistances/Can CPE episodes be explained by transfer network (Functions).R", 
        local = FALSE, verbose = getOption("verbose"))
 
 ###########################
@@ -78,7 +78,8 @@ cat("Set Maximum Number of Days to Test\n")
 Week=8
 
 cat(paste("Get Candidate Transmitters for Week 1 to", Week, "by Mechanism\n"))
-CandidateTransmitters_byWeek_byMechanism=foreach(i=1:Week) %do% getCandidateTransmitters_byWeek_byMechanism(i)
+NonPermutation=T
+CandidateTransmitters_byWeek_byMechanism=foreach(i=1:Week) %do% getCandidateTransmitters_byWeek_byMechanism(data=data, i)
 
 ###################################
 #### STEP 3: GET MIN DISTANCES ####
@@ -122,7 +123,7 @@ cat("Numer of cores to use\n")
 cores=5
 
 cat("Maximum meanGT time to test\n")
-Nruns=5
+Nruns=50
 
 cat("Make clusters for parallel\n")
 cl=makeCluster(cores)
@@ -131,8 +132,9 @@ getDoParWorkers()
 
 cat("RUN PARALLEL\n")
 AllRuns_CandidateTransmitters_Permutations_byMechanism <- foreach(icount(Nruns), .packages=c('igraph', 'foreach')) %dopar% {
+  NonPermutation=F
   cat("Get Weekly Random Candidate Transmitters from Permutations\n")
-  CandidateTransmitters_Permutations_byWeek=foreach(j=1:Week) %do% getCandidateTransmitters_Permutations_byWeek(j)
+  CandidateTransmitters_Permutations_byWeek=foreach(j=1:Week) %do% getCandidateTransmitters_byWeek_byMechanism(data, j)
 } 
 
 cat("Stop parallel\n")
@@ -155,7 +157,7 @@ cat("Numer of cores to use\n")
 cores=5
 
 cat("Maximum meanGT time to test\n")
-#Nruns=5
+Nruns=Nruns
 
 cat("Make clusters for parallel\n")
 cl=makeCluster(cores)
