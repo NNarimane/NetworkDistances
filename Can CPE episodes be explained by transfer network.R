@@ -2,31 +2,7 @@
 ##### Can CPE episodes be explained by transfer network? #####
 ##############################################################
 
-#################################
-#### INSTALL & LOAD PACKAGES ####
-
-cat("Load Packages\n")
-library("igraph")
-library("stringr")
-library("foreach")
-library("doSNOW")
-library("snow")
-
-#########################
-#### SET ENVIRONMENT ####
-
-cat("Set Working Environment\n")
-envNN=T
-envNNwindows=T
-if(envNN){
-  if(envNNwindows){
-    currentwd=setwd("C:/Users/Narimane/Dropbox/Network Distances and CPE Episodes/")
-  }else{
-    currentwd=setwd("/Users/narimanenekkab/Dropbox/Network Distances and CPE Episodes/")
-  }
-}else{
-  currentwd=setwd("/Users/pascalcrepey/Google Drive/1-EPC/stageNN/") 
-}
+source("CommonHeader.R")
 
 ###################################
 #### GET FUNCTIONS SOURCE CODE ####
@@ -185,7 +161,7 @@ registerDoSEQ()
 save(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism, file="Results/50 Permutations (Reshuffled Department)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism.RData")
 
 #############################################################
-#### STEP 4c: AVERAGE MINIMUM DISTANCES FROM PREMUATIONS ####
+#### STEP 4c: AVERAGE MINIMUM DISTANCES FROM PERMUATIONS ####
 
 cat("Get Average of Minimum Distance (Between Potential Infector and Case)\n")
 Average_MinimumDistances_CandidateTransmitters_Permutations_byMechanism=getAverageMinDistances_CandidateTransmitters_Permutations_byWeek(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism)
@@ -205,7 +181,7 @@ Results$StatSigDiff=Results$WilcoxonPairedRankTestPValues < 0.05
 #If stat. sig. p-value results (TRUE), reject H0 (meaning that the distributions differ)
 
 cat("Save Results\n")
-write.csv(Results, file=paste("Results/50 Permutations (Reshuffled Department)/Wilcoxon Rank Sum Test Results for Week 1 to",Week,"for", Nruns,"Permutations (Reshuffled Department).csv"), row.names = F)
+write.csv(Results, file=paste0(writingDir,"Wilcoxon Rank Sum Test Results for Week 1 to",Week,"for", Nruns,"Permutations (Reshuffled Mechanism of Resistance and Importation Status).csv"), row.names = F)
 
 #######################################
 #### INTERPRETATION OF THE RESULTS ####
@@ -218,7 +194,7 @@ write.csv(Results, file=paste("Results/50 Permutations (Reshuffled Department)/W
 
 
 #############################################################################################
-#### Using Distribution of 100 comulations: Compare where potential infector values fall ####
+#### Using Distribution of 100 simulations: Compare where potential infector values fall ####
 ################ Calculate proportions, and values of shortest path #########################
 #############################################################################################
 
@@ -229,4 +205,4 @@ ProportionTables_withMinDistances_byMechanism=cbind(ProportionTables_byMechanism
 colnames(ProportionTables_withMinDistances_byMechanism)=c("ProportionOriginalMinDistUnder5thPercentileOfPermutatedMinDist", "Original_MeanMinimumDistances_ByNWeeks", "Permutations_MeanMinimumDistances_ByWeeks")
 
 cat("Save Table\n")
-write.csv(ProportionTables_withMinDistances_byMechanism, file = paste("Results/50 Permutations (Reshuffled Department)/Proportions and Mean Min Distances Table for Week 1 to",Week,"for", Nruns,"Permutations (Reshuffled Department).csv"))
+write.csv(ProportionTables_withMinDistances_byMechanism, file = paste0(writingDir,"Proportions and Mean Min Distances Table for Week 1 to",Week,"for", Nruns,"Permutations (Reshuffled Mechanism of Resistance and Importation Status).csv"))

@@ -243,11 +243,12 @@ getS1_ProportionIncidentEpisodesWithAtLeastOne_CandidateTransmitters_byWeek=func
     
   }
   
-  cat("Get Minimum Distance Between Episode and 1 Potential Infector\n")
-  MinDistance=lapply(CandidateTransmitters_Departments_MinDistances, function(x) min(x))
-  
-  cat(paste("Unlist, Remove Inf, Minimum Distances", i, "\n"))
-  MinimumDistances=unlist(MinDistance)
+  cat("Get Number of Incident Episodes With At Least 1 Potential Infector\n")
+  IncidentEpisodesWithAtLeast1Infector=foreach(i=1:length(CandidateTransmitters_Departments_MinDistances)) %do% {
+    length(CandidateTransmitters_Departments_MinDistances[[i]]) >= 1 & !is.na(CandidateTransmitters_Departments_MinDistances[[i]])[[1]]
+  }
+  prop.table(table(unlist(IncidentEpisodesWithAtLeast1Infector)))
+
   
   return(MinimumDistances)
 }
