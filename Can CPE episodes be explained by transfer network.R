@@ -197,7 +197,7 @@ Results$StatSigDiff=Results$WilcoxonPairedRankTestPValues < 0.05
 #If stat. sig. p-value results (TRUE), reject H0 (meaning that the distributions differ)
 
 cat("Save Results\n")
-write.csv(Results, file="Data/Wilcoxon Rank Sum Test Results for Week 1 to",Week," for", Nruns," Permutations by Mechanism.csv", row.names = F)
+write.csv(Results, file=paste("Results/Wilcoxon Rank Sum Test Results for Week 1 to",Week,"for", Nruns,"Permutations (Reshuffled Mechanism of Resistance and Importation Status).csv"), row.names = F)
 
 #######################################
 #### INTERPRETATION OF THE RESULTS ####
@@ -218,7 +218,7 @@ cat("Get Proportion Tables\n")
 ProportionTables_byMechanism=get5thQuantiles(Week, MinimumDistances_PotentialInfector_byWeek_byMechanism, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism)
 MeanMinimumDistances_byMechanism=getMeanMinimumDistances(MinimumDistances_PotentialInfector_byWeek_byMechanism, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism)
 ProportionTables_withMinDistances_byMechanism=cbind(ProportionTables_byMechanism[2,], MeanMinimumDistances_byMechanism)
-colnames(ProportionTables_withMinDistances_byMechanism)=c("ProportionLessThan5thPercentile", "MinimumDistances_MeansByNWeeks", "RandomPermutationsByDays_MeansByNWeeks")
+colnames(ProportionTables_withMinDistances_byMechanism)=c("ProportionPermutationsUnderOriginal5thPercentile", "Original_MeanMinimumDistances_ByNWeeks", "Permutations_MeanMinimumDistances_ByWeeks")
 
-
-write.csv(ProportionTables_withMinDistances_byMechanism, file = "Data/ProportionTables_withMinDistances_byMechanism.csv")
+cat("Save Table\n")
+write.csv(ProportionTables_withMinDistances_byMechanism, file = paste("Results/Proportions and Mean Min Distances Table for Week 1 to",Week,"for", Nruns,"Permutations (Reshuffled Mechanism of Resistance and Importation Status).csv"))

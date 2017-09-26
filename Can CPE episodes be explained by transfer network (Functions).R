@@ -311,6 +311,10 @@ getWilcoxonPairedRankTestPValues=function(i, MinimumDistances, MinimumDistances_
 
 ####################################################
 #### PROPORTIONS OF VALUES UNDER 5TH PERCENTILE ####
+CleaningFunction2=function(x){
+  x <- lapply(x, function(j) if(is.numeric(j)) ifelse(is.infinite(j), NA, j) else j)
+  return(x)
+}
 get5thQuantiles=function(Week, MinimumDistances, AllRandomMinimumDistances){
   cat("Convert random permutations into dataframes\n")
   RandomSimulationsByDays=foreach(i=1:length(AllRandomMinimumDistances[[1]])) %do% lapply(AllRandomMinimumDistances, `[[`, i) #get first elements i of each list
