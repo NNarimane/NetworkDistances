@@ -19,9 +19,9 @@ envNN=T
 envNNwindows=T
 if(envNN){
   if(envNNwindows){
-    currentwd=setwd("C:/Users/Narimane/Dropbox/CPE Transmission Chains/")
+    currentwd=setwd("C:/Users/Narimane/Dropbox/Network Distances and CPE Episodes/")
   }else{
-    currentwd=setwd("/Users/narimanenekkab/Dropbox/CPE Transmission Chains/")
+    currentwd=setwd("/Users/narimanenekkab/Dropbox/Network Distances and CPE Episodes/")
   }
 }else{
   currentwd=setwd("/Users/pascalcrepey/Google Drive/1-EPC/stageNN/") 

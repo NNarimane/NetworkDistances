@@ -18,9 +18,9 @@ envNN=T
 envNNwindows=T
 if(envNN){
   if(envNNwindows){
-    currentwd=setwd("C:/Users/Narimane/Dropbox/CPE Transmission Chains/")
+    currentwd=setwd("C:/Users/Narimane/Dropbox/Network Distances and CPE Episodes/")
   }else{
-    currentwd=setwd("/Users/narimanenekkab/Dropbox/CPE Transmission Chains/")
+    currentwd=setwd("/Users/narimanenekkab/Dropbox/Network Distances and CPE Episodes/")
   }
 }else{
   currentwd=setwd("/Users/pascalcrepey/Google Drive/1-EPC/stageNN/") 
@@ -29,7 +29,7 @@ if(envNN){
 ###################################
 #### GET FUNCTIONS SOURCE CODE ####
 
-source("CPETransmissionChains/Generation Time Sensitivity Analysis Functions.R", 
+source("CPETransmissionChains/Can CPE episodes be explained by transfer network (Functions).R", 
        local = FALSE, verbose = getOption("verbose"))
 
 ###########################
@@ -39,9 +39,9 @@ cat("Deptartment Network or Hospital Network\n")
 Department=F
 if(Department){
   cat("Upload Department Contact Network\n")
-  load("../Hospital_Network/HospitalNetwork/Data/Department Network.RData")
+  load("Data/Department Network.RData")
   cat("Upload Department Contact Network pFlow\n")
-  load("C:/Users/Narimane/Desktop/Hospital Data/Created Files 23.01.17/pFlow_ALL_Dept.RData")
+  load("Data/pFlow_ALL_Dept.RData")
 }else{
   cat("Upload Hospital Transfer Network\n")
   load("C:/Users/Narimane/Desktop/Hospital Network Data/directed.graph_ALL.RData")
