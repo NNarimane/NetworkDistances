@@ -176,6 +176,61 @@ getCandidateTransmitters_byWeek_byClass=function(data, Week){
   return(CandidateTransmitters_byThirdClass)
 }
 
+getCandidateTransmitters_byWeek_byMechanism_Reassignment=function(data, Week){
+  
+  ##############################################
+  #### STEP 2: Find All Candidate Transmitters ####
+  cat("#### STEP 2: Find All Candidate Transmitters ####\n")
+  
+  #A potential infector
+  # - occured N days/Weeks before episode (7 days, 14 days, 21 days, 28 days, 35 days, 42 days)
+  # - shares the same mechanism OR shares same class 
+  # - in the same bacteria?? (will not test yet)
+  
+  cat(paste("Set Number of Preceeding Weeks Equal to", Week, "\n"))
+  Week=Week
+  
+  if(NonPermutation){
+    cat("Criterion 1: Episode Occured N Weeks Before\n")
+    CandidateTransmitters_byWeeks=lapply(1:nrow(data), function(i){
+      CaseDate=data[i,2]
+      CaseID=data[i,1]
+      data[data[,2] < CaseDate 
+           & data[,2] >= (CaseDate-Week*7) 
+           & data$Episode != CaseID,]})
+  }else{
+    CandidateTransmitters_byWeeks=getPermutatedData_Reassignment(data, Week)
+    }
+  
+  cat("Criterion 2: Imported Episodes Do Not Have Potential Infectors\n")
+  ImportationStatus="Imported"
+  CandidateTransmitters_byWeeks_ImportationCorrection=foreach(i=1:length(CandidateTransmitters_byWeeks)) %do% {
+    if(data[i,ImportationStatus] == "N"){
+      CandidateTransmitters_byWeeks[[i]]=CandidateTransmitters_byWeeks[[i]]
+    }
+  }
+  # CandidateTransmitters_byWeeks_ImportationCorrection[sapply(CandidateTransmitters_byWeeks_ImportationCorrection, is.null)] = NULL
+  
+  cat("Criterion 3: Same CPE mechanism of resistance\n")
+  FirstResistanceMechanism="FirstMechanism"
+  CandidateTransmitters_byFirstMechanism=foreach(i=1:length(CandidateTransmitters_byWeeks_ImportationCorrection)) %do% {
+    CandidateTransmitters=CandidateTransmitters_byWeeks_ImportationCorrection[[i]]
+    CandidateTransmitters[CandidateTransmitters[,FirstResistanceMechanism] %in% data[i,FirstResistanceMechanism],]
+  }
+  SecondResistanceMechanism="SecondMechanism"
+  CandidateTransmitters_bySecondMechanism=foreach(i=1:length(CandidateTransmitters_byFirstMechanism)) %do% {
+    CandidateTransmitters=CandidateTransmitters_byFirstMechanism[[i]]
+    CandidateTransmitters[CandidateTransmitters[,SecondResistanceMechanism] %in% data[i,SecondResistanceMechanism],]
+  }
+  ThirdResistanceMechanism="ThirdMechanism"
+  CandidateTransmitters_byThirdMechanism=foreach(i=1:length(CandidateTransmitters_bySecondMechanism)) %do% {
+    CandidateTransmitters=CandidateTransmitters_bySecondMechanism[[i]]
+    CandidateTransmitters[CandidateTransmitters[,ThirdResistanceMechanism] %in% data[i,ThirdResistanceMechanism],]
+  }
+  
+  return(CandidateTransmitters_byThirdMechanism)
+}
+
 ########################################################
 #### GET MINIMUM DISTANCE OF CANDIDATE TRANSMITTERS ####
 getMinimumDistances_CandidateTransmitters_byWeek=function(i, CandidateTransmitters, weights, algorithm){
@@ -196,7 +251,8 @@ getMinimumDistances_CandidateTransmitters_byWeek=function(i, CandidateTransmitte
   cat("Distance Between Department of Episode and Candidate Transmitters Departments\n")
   CandidateTransmitters_Departments_MinDistances=foreach(i=1:length(CandidateTransmitters_Departments)) %do% {
     CandidateTransmitters_Departments_Subset=CandidateTransmitters_Departments[[i]]
-    if(nrow(CandidateTransmitters_Departments_Subset) > 0){
+    if()
+    if(nrow(CandidateTransmitters_Departments_Subset) > 0 & !is.null(CandidateTransmitters_Departments_Subset)){
       Distances=foreach(j=1:nrow(CandidateTransmitters_Departments_Subset), .combine='c') %do% {
         Distances=Distances_Matrix[data[i,Department],CandidateTransmitters_Departments_Subset[j,Department]]
       } 
@@ -214,8 +270,7 @@ getMinimumDistances_CandidateTransmitters_byWeek=function(i, CandidateTransmitte
   
   return(MinimumDistances)
 }
-
-getS1_ProportionIncidentEpisodesWithAtLeastOne_CandidateTransmitters_byWeek=function(i, CandidateTransmitters, weights, algorithm){
+getMinimumGeoDistances_CandidateTransmitters_byWeek=function(i, CandidateTransmitters, weights, algorithm){
   ##############################################################################################
   #### STEP 3: Calculate Minimum (Network) Distance Between Episode and Candidate Transmitters ####
   cat("#### STEP 3: Calculate Minimum (Network) Distance Between Episode and Candidate Transmitters ####\n")
@@ -229,6 +284,7 @@ getS1_ProportionIncidentEpisodesWithAtLeastOne_CandidateTransmitters_byWeek=func
   
   cat("Distance Matrix Between Departments\n")
   Distances_Matrix=as.data.frame(distances(directed.graph_Dept, weights = weights, algorithm = algorithm))
+  load(file = "Data/GeoDistanceMatrix.RData")
   
   cat("Distance Between Department of Episode and Candidate Transmitters Departments\n")
   CandidateTransmitters_Departments_MinDistances=foreach(i=1:length(CandidateTransmitters_Departments)) %do% {
@@ -243,15 +299,164 @@ getS1_ProportionIncidentEpisodesWithAtLeastOne_CandidateTransmitters_byWeek=func
     
   }
   
-  cat("Get Number of Incident Episodes With At Least 1 Potential Infector\n")
-  IncidentEpisodesWithAtLeast1Infector=foreach(i=1:length(CandidateTransmitters_Departments_MinDistances)) %do% {
-    length(CandidateTransmitters_Departments_MinDistances[[i]]) >= 1 & !is.na(CandidateTransmitters_Departments_MinDistances[[i]])[[1]]
+  cat("Distance Between Department of Episode and Candidate Transmitters Departments\n")
+  CandidateTransmitters_Departments_MinGeoDistances=foreach(i=1:length(CandidateTransmitters_Departments)) %do% {
+    CandidateTransmitters_Departments_Subset=CandidateTransmitters_Departments[[i]]
+    if(nrow(CandidateTransmitters_Departments_Subset) > 0){
+      Distances=foreach(j=1:nrow(CandidateTransmitters_Departments_Subset), .combine='c') %do% {
+        Distances=GeoDistanceMatrix[data[i,Department],CandidateTransmitters_Departments_Subset[j,Department]]
+      } 
+    }else{
+      Distances=NA
+    }
+    
   }
-  prop.table(table(unlist(IncidentEpisodesWithAtLeast1Infector)))
-
   
-  return(MinimumDistances)
+  cat("Get Minimum Distance Between Episode and 1 Potential Infector\n")
+  MinDistanceLocation=lapply(CandidateTransmitters_Departments_MinDistances, function(x) which.min(x))
+  
+  CandidateTransmitters_Departments_MinGeoDistances_Values=foreach(i=1:length(CandidateTransmitters_Departments_MinGeoDistances)) %do% {
+    if(!is.na(CandidateTransmitters_Departments_MinGeoDistances[[i]])){
+      CandidateTransmitters_Departments_MinGeoDistances_Subset=CandidateTransmitters_Departments_MinGeoDistances[[i]]
+      MinDistanceLocation_Subset=MinDistanceLocation[[i]]
+      CandidateTransmitters_Departments_MinGeoDistances_Value=CandidateTransmitters_Departments_MinGeoDistances_Subset[MinDistanceLocation_Subset]
+    }else{
+      CandidateTransmitters_Departments_MinGeoDistances[[i]]=NA
+    }
+     }
+  
+  cat(paste("Unlist, Remove Inf, Minimum Distances", i, "\n"))
+  MinimumGeoDistances=unlist(CandidateTransmitters_Departments_MinGeoDistances_Values)
+  
+  return(MinimumGeoDistances)
 }
+getMinimumUnWeightedDistances_CandidateTransmitters_byWeek=function(i, CandidateTransmitters, weights, algorithm){
+  ##############################################################################################
+  #### STEP 3: Calculate Minimum (Network) Distance Between Episode and Candidate Transmitters ####
+  cat("#### STEP 3: Calculate Minimum (Network) Distance Between Episode and Candidate Transmitters ####\n")
+  
+  cat("List of Departments of Episode and Candidate Transmitters\n")
+  Department="Department"
+  CandidateTransmitters_Departments=foreach(i=1:length(CandidateTransmitters)) %do% {
+    CandidateTransmitters_Departments=CandidateTransmitters[[i]]
+    CandidateTransmitters_Departments[Department]
+  }
+  
+  cat("Distance Matrix Between Departments\n")
+  Distances_Matrix=as.data.frame(distances(directed.graph_Dept, weights = weights, algorithm = algorithm))
+  UnWeighted_Distances_Matrix=as.data.frame(distances(directed.graph_Dept, weights = NA, algorithm = "automatic"))
+  
+  cat("Distance Between Department of Episode and Candidate Transmitters Departments\n")
+  CandidateTransmitters_Departments_MinDistances=foreach(i=1:length(CandidateTransmitters_Departments)) %do% {
+    CandidateTransmitters_Departments_Subset=CandidateTransmitters_Departments[[i]]
+    if(nrow(CandidateTransmitters_Departments_Subset) > 0){
+      Distances=foreach(j=1:nrow(CandidateTransmitters_Departments_Subset), .combine='c') %do% {
+        Distances=Distances_Matrix[data[i,Department],CandidateTransmitters_Departments_Subset[j,Department]]
+      } 
+    }else{
+      Distances=NA
+    }
+    
+  }
+  
+  cat("Distance Between Department of Episode and Candidate Transmitters Departments\n")
+  CandidateTransmitters_Departments_MinUnWeightedDistances=foreach(i=1:length(CandidateTransmitters_Departments)) %do% {
+    CandidateTransmitters_Departments_Subset=CandidateTransmitters_Departments[[i]]
+    if(nrow(CandidateTransmitters_Departments_Subset) > 0){
+      Distances=foreach(j=1:nrow(CandidateTransmitters_Departments_Subset), .combine='c') %do% {
+        Distances=UnWeighted_Distances_Matrix[data[i,Department],CandidateTransmitters_Departments_Subset[j,Department]]
+      } 
+    }else{
+      Distances=NA
+    }
+    
+  }
+  
+  cat("Get Minimum Distance Between Episode and 1 Potential Infector\n")
+  MinDistanceLocation=lapply(CandidateTransmitters_Departments_MinDistances, function(x) which.min(x))
+  
+  CandidateTransmitters_Departments_MinUnWeightedDistances_Values=foreach(i=1:length(CandidateTransmitters_Departments_MinUnWeightedDistances)) %do% {
+    if(!is.na(CandidateTransmitters_Departments_MinUnWeightedDistances[[i]])){
+      CandidateTransmitters_Departments_MinUnWeightedDistances_Subset=CandidateTransmitters_Departments_MinUnWeightedDistances[[i]]
+      MinDistanceLocation_Subset=MinDistanceLocation[[i]]
+      CandidateTransmitters_Departments_MinUnWeightedDistances_Value=CandidateTransmitters_Departments_MinUnWeightedDistances_Subset[MinDistanceLocation_Subset]
+    }else{
+      CandidateTransmitters_Departments_MinUnWeightedDistances[[i]]=NA
+    }
+     }
+  
+  cat(paste("Unlist, Remove Inf, Minimum Distances", i, "\n"))
+  MinimumUnWeightedDistances=unlist(CandidateTransmitters_Departments_MinUnWeightedDistances_Values)
+  
+  return(MinimumUnWeightedDistances)
+}
+
+################
+#### GET S1 ####
+
+# getS1_ProportionIncidentEpisodesWithAtLeastOne_CandidateTransmitters_byWeek=function(i, CandidateTransmitters, weights, algorithm){
+#   ##############################################################################################
+#   #### STEP 3: Calculate Minimum (Network) Distance Between Episode and Candidate Transmitters ####
+#   cat("#### STEP 3: Calculate Minimum (Network) Distance Between Episode and Candidate Transmitters ####\n")
+#   
+#   cat("List of Departments of Episode and Candidate Transmitters\n")
+#   Department="Department"
+#   CandidateTransmitters_Departments=foreach(i=1:length(CandidateTransmitters)) %do% {
+#     CandidateTransmitters_Departments=CandidateTransmitters[[i]]
+#     CandidateTransmitters_Departments[Department]
+#   }
+#   
+#   cat("Distance Matrix Between Departments\n")
+#   Distances_Matrix=as.data.frame(distances(directed.graph_Dept, weights = weights, algorithm = algorithm))
+#   
+#   cat("Distance Between Department of Episode and Candidate Transmitters Departments\n")
+#   CandidateTransmitters_Departments_MinDistances=foreach(i=1:length(CandidateTransmitters_Departments)) %do% {
+#     CandidateTransmitters_Departments_Subset=CandidateTransmitters_Departments[[i]]
+#     if(nrow(CandidateTransmitters_Departments_Subset) > 0){
+#       Distances=foreach(j=1:nrow(CandidateTransmitters_Departments_Subset), .combine='c') %do% {
+#         Distances=Distances_Matrix[data[i,Department],CandidateTransmitters_Departments_Subset[j,Department]]
+#       } 
+#     }else{
+#       Distances=NA
+#     }
+#     
+#   }
+#   
+#   cat("Get Number of Incident Episodes With At Least 1 Potential Infector\n")
+#   IncidentEpisodesWithAtLeast1Infector=foreach(i=1:length(CandidateTransmitters_Departments_MinDistances)) %do% {
+#     length(CandidateTransmitters_Departments_MinDistances[[i]]) >= 1 & !is.na(CandidateTransmitters_Departments_MinDistances[[i]])[[1]]
+#   }
+#   PropTable=prop.table(table(unlist(IncidentEpisodesWithAtLeast1Infector)))
+# 
+#   return(PropTable)
+# }
+
+########################################################
+#### GET GEO DISTANCE MATRIX ####
+
+# DeptGeoCodes=read.csv(file="Data/All Dept Prefecture GeoCodes.csv", stringsAsFactors = F)[,c(1,7:8)]
+# DeptGeoCodes[which(DeptGeoCodes$Number == "2A"),1] = 20
+# DeptNumber=DeptGeoCodes$Number
+# DeptNumber=str_pad(DeptNumber, 2, pad = "0")
+# LatLong<-DeptGeoCodes[which(names(Distances_Matrix) %in% DeptNumber),2:3]
+# LongLat<-LatLong[c("Longitude","Latitude")]
+# runGeoDistanceMatrix=T
+# if(runGeoDistanceMatrix){
+#   GeoDistanceMatrix=array(dim=c(93,93))
+#   runit=T
+#   for (i in 1:93){
+#     if(runit){
+#       Distance<-distm(LongLat[i,1:2], LongLat[1:2],  fun=distHaversine)
+#       Distance<-Distance/1000
+#     }
+#     GeoDistanceMatrix[i,]=Distance
+#   }
+#   GeoDistanceMatrix=as.data.frame(GeoDistanceMatrix)
+#   rownames(GeoDistanceMatrix)=names(Distances_Matrix)
+#   colnames(GeoDistanceMatrix)=names(Distances_Matrix)
+#   save(GeoDistanceMatrix, file="Data/GeoDistanceMatrix.RData")
+# }
+
 
 ###################################
 #### GET PERMUTATIONS FUNCTION ####
@@ -272,6 +477,28 @@ getPermutatedData=function(data, Week){
       # dataPermutation=cbind(dataPossibilities[,c(1:3,6:7,9,14:15)], dataPossibilities[sample(1:nrow(dataPossibilities)),c(4:5,8,10:13,16:21)])
       dataPermutation=cbind(dataPossibilities[,c(1:13,16:21)], dataPossibilities[sample(1:nrow(dataPossibilities)),c(14:15)])
       dataPermutation=dataPermutation[,columnorder]
+    }else{
+      dataPossibleCandidates[[i]]=dataPossibleCandidates[[i]]
+    }
+  }
+  return(dataPermutations)
+}
+
+getPermutatedData_Reassignment=function(data, Week){
+  cat("Get possible candidate transmitters for each incident case/episode\n")
+  dataPossibleCandidates=lapply(1:nrow(data), function(i){
+    CaseDate=data[i,2]
+    CaseID=data[i,1]
+    data[data[,2] < CaseDate 
+         & data[,2] >= (CaseDate-Week*7) 
+         & data$Episode != CaseID,]})
+  cat("For each list of possible candidates, reassign 1 out of 93 Departments\n")
+  dataPermutations=foreach(i=1:length(dataPossibleCandidates)) %do% {
+    if(nrow(dataPossibleCandidates[[i]]) > 0){
+      dataPossibilities=dataPossibleCandidates[[i]]
+      columnorder=names(dataPossibilities)
+      dataPermutation=cbind(dataPossibilities[,c(1:13)], sample(data$Department, size = nrow(dataPossibilities), replace = TRUE), dataPossibilities[,c(15:21)])
+      colnames(dataPermutation)=columnorder
     }else{
       dataPossibleCandidates[[i]]=dataPossibleCandidates[[i]]
     }
@@ -368,33 +595,221 @@ get5thQuantiles=function(Week, MinimumDistances, AllRandomMinimumDistances){
   }
   return(ProportionsTable)
 }
-getMeanMinimumDistances=function(MinimumDistances, AllRandomMinimumDistances){
-  Week=Week
+get5thQuantiles_NonZeroDistances=function(Week, MinimumDistances, AllRandomMinimumDistances){
+  MinimumDistances=lapply(MinimumDistances, function(x) x[x != 0])
   
-  cat("Convert random simulations into dataframes\n")
+  cat("Convert random permutations into dataframes\n")
+  RandomSimulationsByDays=foreach(i=1:length(AllRandomMinimumDistances[[1]])) %do% lapply(AllRandomMinimumDistances, `[[`, i) #get first elements i of each list
+  RandomSimulationsByDays_Clean=foreach(i=1:length(RandomSimulationsByDays)) %do% CleaningFunction(RandomSimulationsByDays[[i]])
+  RandomSimulationsByDays_Dataframes=foreach(i=1:length(RandomSimulationsByDays_Clean)) %do% {
+    RandomSimulationsByDays_Clean_NonZeros=lapply(RandomSimulationsByDays_Clean[[i]], function(x) replace(x, x==0, NA))
+    RandomSimulationsByDays_Dataframe=data.frame(RandomSimulationsByDays_Clean_NonZeros, row.names = NULL) 
+  }
+  
+  cat("Get proportion cases that have values smaller than the 5th percentile of simulations for each week N\n")
+  ProportionsTable=foreach(n=1:Week, .combine = "cbind") %do% {
+    week=foreach(i=1:nrow(data)) %do% (MinimumDistances[[n]][i] <= quantile(RandomSimulationsByDays_Dataframes[[n]][i,], 0.05, na.rm=T)[[1]])
+    week=unlist(week)
+    resultsTable=prop.table(table(week))
+  }
+  return(ProportionsTable)
+}
+getRange=function(Week, MinimumDistances, AllRandomMinimumDistances){
   RandomSimulationsByDays=foreach(i=1:length(AllRandomMinimumDistances[[1]])) %do% lapply(AllRandomMinimumDistances, `[[`, i) #get first elements i of each list
   RandomSimulationsByDays_Clean=foreach(i=1:length(RandomSimulationsByDays)) %do% CleaningFunction(RandomSimulationsByDays[[i]])
   RandomSimulationsByDays_Dataframes=foreach(i=1:length(RandomSimulationsByDays_Clean)) %do% data.frame(RandomSimulationsByDays_Clean[[i]], row.names = NULL) 
-  cat(paste("Row Means of", Week, "permutations for every case\n"))
-  RandomSimulationsByDays_RowMeans=foreach(i=1:length(RandomSimulationsByDays_Dataframes)) %do% rowMeans(RandomSimulationsByDays_Dataframes[[i]], na.rm=TRUE)
   
-  cat(paste("Min distance means of", Week, "permutations for every Week N\n"))
-  RandomSimulationsByDays_MeansByNDays=foreach(i=1:length(RandomSimulationsByDays_RowMeans)) %do% mean(unlist(RandomSimulationsByDays_RowMeans[[i]]), na.rm = T)
-  
-  cat("Mean distance for every Week N for candidate transmitters\n")
-  MinimumDistances_Clean=foreach(i=1:length(MinimumDistances)) %do% CleaningFunction2(MinimumDistances[[i]])
-  MinimumDistances_MeansByNDays=foreach(i=1:length(MinimumDistances_Clean)) %do% mean(unlist(MinimumDistances_Clean[[i]]), na.rm = T)
-  
-  cat("Get table\n")
-  MinDistancesTableByMeanPerNDays=as.data.frame(cbind(unlist(MinimumDistances_MeansByNDays), unlist(RandomSimulationsByDays_MeansByNDays)))
-  colnames(MinDistancesTableByMeanPerNDays)=c("MinimumDistances_MeansByNDays", "RandomSimulationsByDays_MeansByNDays")
-  
-  return(MinDistancesTableByMeanPerNDays)
+  RangeTable=foreach(n=1:Week, .combine = "rbind") %do% {
+    range=c(range(MinimumDistances[[n]], na.rm=T), range(unlist(RandomSimulationsByDays_Dataframes[[n]]), na.rm=T))
+    range=unlist(range)
+  }
+  colnames(RangeTable)=c("Min_Observed", "Max_Observed", "Min_Permutations", "Max_Permutations")
+  RangeTable=as.data.frame(RangeTable)
+  return(RangeTable)
 }
 
+###################################
+#### MEAN WEEKLY MIN DISTANCES ####
+getMeanMinimumDistances=function(MinimumDistances, MinimumDistances_UnWeighted, MinimumDistances_GeoDist,
+                                 AllPermutatationMinimumDistances, AllPermutatationMinimumDistances_UnWeighted, AllPermutatationMinimumDistances_GeoDist){
+  Week=Week
+ 
+  #Original
+  #Weighted
+  cat("Mean distance for every Week N for candidate transmitters\n")
+  MinimumDistances_Clean=foreach(i=1:length(MinimumDistances)) %do% CleaningFunction2(MinimumDistances[[i]])
+  MinimumDistances_MeansByNWeeks=foreach(i=1:length(MinimumDistances_Clean)) %do% mean(unlist(MinimumDistances_Clean[[i]]), na.rm = T)
+  #UnWeighted
+  cat("Mean unweighted distance for every Week N for candidate transmitters\n")
+  MinimumDistances_UnWeighted_Clean=foreach(i=1:length(MinimumDistances_UnWeighted)) %do% CleaningFunction2(MinimumDistances_UnWeighted[[i]])
+  MinimumDistances_UnWeighted_MeansByNWeeks=foreach(i=1:length(MinimumDistances_UnWeighted_Clean)) %do% mean(unlist(MinimumDistances_UnWeighted_Clean[[i]]), na.rm = T)
+  #GeoDist
+  cat("Mean geo distance for every Week N for candidate transmitters\n")
+  MinimumDistances_GeoDist_Clean=foreach(i=1:length(MinimumDistances_GeoDist)) %do% CleaningFunction2(MinimumDistances_GeoDist[[i]])
+  MinimumDistances_GeoDist_MeansByNWeeks=foreach(i=1:length(MinimumDistances_GeoDist_Clean)) %do% mean(unlist(MinimumDistances_GeoDist_Clean[[i]]), na.rm = T)
+  
+  #Permutations
+  #Weighted
+  cat("Convert random simulations into dataframes\n")
+  RandomSimulationsByWeeks=foreach(i=1:length(AllPermutatationMinimumDistances[[1]])) %do% lapply(AllPermutatationMinimumDistances, `[[`, i) #get first elements i of each list
+  RandomSimulationsByWeeks_Clean=foreach(i=1:length(RandomSimulationsByWeeks)) %do% CleaningFunction(RandomSimulationsByWeeks[[i]])
+  RandomSimulationsByWeeks_Dataframes=foreach(i=1:length(RandomSimulationsByWeeks_Clean)) %do% data.frame(RandomSimulationsByWeeks_Clean[[i]], row.names = NULL) 
+  cat(paste("Row Means of", Week, "permutations for every case\n"))
+  RandomSimulationsByWeeks_RowMeans=foreach(i=1:length(RandomSimulationsByWeeks_Dataframes)) %do% rowMeans(RandomSimulationsByWeeks_Dataframes[[i]], na.rm=TRUE)
+  cat(paste("Min weighted distance means of", Week, "permutations for every Week N\n"))
+  RandomSimulationsByWeeks_MeansByNWeeks=foreach(i=1:length(RandomSimulationsByWeeks_RowMeans)) %do% mean(unlist(RandomSimulationsByWeeks_RowMeans[[i]]), na.rm = T)
+  #UnWeighted
+  cat("Convert random simulations into dataframes\n")
+  RandomSimulationsByWeeks_UnWeighted=foreach(i=1:length(AllPermutatationMinimumDistances_UnWeighted[[1]])) %do% lapply(AllPermutatationMinimumDistances_UnWeighted, `[[`, i) #get first elements i of each list
+  RandomSimulationsByWeeks_UnWeighted_Clean=foreach(i=1:length(RandomSimulationsByWeeks_UnWeighted)) %do% CleaningFunction(RandomSimulationsByWeeks_UnWeighted[[i]])
+  RandomSimulationsByWeeks_UnWeighted_Dataframes=foreach(i=1:length(RandomSimulationsByWeeks_UnWeighted_Clean)) %do% data.frame(RandomSimulationsByWeeks_UnWeighted_Clean[[i]], row.names = NULL) 
+  cat(paste("Row Means of", Week, "permutations for every case\n"))
+  RandomSimulationsByWeeks_UnWeighted_RowMeans=foreach(i=1:length(RandomSimulationsByWeeks_UnWeighted_Dataframes)) %do% rowMeans(RandomSimulationsByWeeks_UnWeighted_Dataframes[[i]], na.rm=TRUE)
+  cat(paste("Min unweighted distance means of", Week, "permutations for every Week N\n"))
+  RandomSimulationsByWeeks_UnWeighted_MeansByNWeeks=foreach(i=1:length(RandomSimulationsByWeeks_UnWeighted_RowMeans)) %do% mean(unlist(RandomSimulationsByWeeks_UnWeighted_RowMeans[[i]]), na.rm = T)
+  #GeoDist
+  cat("Convert random simulations into dataframes\n")
+  RandomSimulationsByWeeks_GeoDist=foreach(i=1:length(AllPermutatationMinimumDistances_GeoDist[[1]])) %do% lapply(AllPermutatationMinimumDistances_GeoDist, `[[`, i) #get first elements i of each list
+  RandomSimulationsByWeeks_GeoDist_Clean=foreach(i=1:length(RandomSimulationsByWeeks_GeoDist)) %do% CleaningFunction(RandomSimulationsByWeeks_GeoDist[[i]])
+  RandomSimulationsByWeeks_GeoDist_Dataframes=foreach(i=1:length(RandomSimulationsByWeeks_GeoDist_Clean)) %do% data.frame(RandomSimulationsByWeeks_GeoDist_Clean[[i]], row.names = NULL) 
+  cat(paste("Row Means of", Week, "permutations for every case\n"))
+  RandomSimulationsByWeeks_GeoDist_RowMeans=foreach(i=1:length(RandomSimulationsByWeeks_GeoDist_Dataframes)) %do% rowMeans(RandomSimulationsByWeeks_GeoDist_Dataframes[[i]], na.rm=TRUE)
+  cat(paste("Min geo distance means of", Week, "permutations for every Week N\n"))
+  RandomSimulationsByWeeks_GeoDist_MeansByNWeeks=foreach(i=1:length(RandomSimulationsByWeeks_GeoDist_RowMeans)) %do% mean(unlist(RandomSimulationsByWeeks_GeoDist_RowMeans[[i]]), na.rm = T)
+  
+  cat("Get table\n")
+  MinDistancesTableByMeanPerNWeeks=as.data.frame(cbind(unlist(MinimumDistances_MeansByNWeeks), unlist(MinimumDistances_UnWeighted_MeansByNWeeks), unlist(MinimumDistances_GeoDist_MeansByNWeeks),
+                                                       unlist(RandomSimulationsByWeeks_MeansByNWeeks), unlist(RandomSimulationsByWeeks_UnWeighted_MeansByNWeeks), unlist(RandomSimulationsByWeeks_GeoDist_MeansByNWeeks)))
+  colnames(MinDistancesTableByMeanPerNWeeks)=c("MinimumDistances_MeansByNWeeks", "MinimumDistances_UnWeighted_MeansByNWeeks", "MinimumDistances_GeoDist_MeansByNWeeks",
+                                               "RandomSimulationsByWeeks_MeansByNWeeks", "RandomSimulationsByWeeks_UnWeighted_MeansByNWeeks", "RandomSimulationsByWeeks_GeoDist_MeansByNWeeks")
+  
+  return(MinDistancesTableByMeanPerNWeeks)
+}
 
+getMeanMinimumDistances_NonZeroDistances=function(MinimumDistances, MinimumDistances_UnWeighted, MinimumDistances_GeoDist, 
+                                                  AllPermutatationMinimumDistances, AllPermutatationMinimumDistances_UnWeighted, AllPermutatationMinimumDistances_GeoDist){
+  Week=Week
+  
+  #Original
+  #Weighted
+  cat("Mean distance for every Week N for candidate transmitters\n")
+  MinimumDistances_Clean=foreach(i=1:length(MinimumDistances)) %do% CleaningFunction2(MinimumDistances[[i]])
+  MinimumDistances_MeansByNWeeks=foreach(i=1:length(MinimumDistances_Clean)) %do% {
+    MinimumDistances_Unlist=unlist(MinimumDistances_Clean[[i]])
+    MinimumDistances_NonZeros=MinimumDistances_Unlist[MinimumDistances_Unlist != 0]
+    mean(MinimumDistances_NonZeros, na.rm = T) 
+  }
+  #UnWeighted
+  cat("Mean unweighted distance for every Week N for candidate transmitters\n")
+  MinimumDistances_UnWeighted_Clean=foreach(i=1:length(MinimumDistances_UnWeighted)) %do% CleaningFunction2(MinimumDistances_UnWeighted[[i]])
+  MinimumDistances_UnWeighted_MeansByNWeeks=foreach(i=1:length(MinimumDistances_UnWeighted_Clean)) %do% {
+    MinimumDistances_Unlist=unlist(MinimumDistances_UnWeighted_Clean[[i]])
+    MinimumDistances_NonZeros=MinimumDistances_Unlist[MinimumDistances_Unlist != 0]
+    mean(MinimumDistances_NonZeros, na.rm = T) 
+  }
+  #GeoDistance
+  cat("Mean unweighted distance for every Week N for candidate transmitters\n")
+  MinimumDistances_GeoDist_Clean=foreach(i=1:length(MinimumDistances_GeoDist)) %do% CleaningFunction2(MinimumDistances_GeoDist[[i]])
+  MinimumDistances_GeoDist_MeansByNWeeks=foreach(i=1:length(MinimumDistances_GeoDist_Clean)) %do% {
+    MinimumDistances_Unlist=unlist(MinimumDistances_GeoDist_Clean[[i]])
+    MinimumDistances_NonZeros=MinimumDistances_Unlist[MinimumDistances_Unlist != 0]
+    mean(MinimumDistances_NonZeros, na.rm = T) 
+  }
+  
+  #Permutations
+  #Weighted
+  cat("Convert random simulations into dataframes\n")
+  RandomSimulationsByWeeks=foreach(i=1:length(AllPermutatationMinimumDistances[[1]])) %do% lapply(AllPermutatationMinimumDistances, `[[`, i) #get first elements i of each list
+  RandomSimulationsByWeeks_Clean=foreach(i=1:length(RandomSimulationsByWeeks)) %do% CleaningFunction(RandomSimulationsByWeeks[[i]])
+  # RandomSimulationsByWeeks_Dataframes=foreach(i=1:length(RandomSimulationsByWeeks_Clean)) %do% data.frame(RandomSimulationsByWeeks_Clean[[i]], row.names = NULL) 
+  cat(paste("Row Means of", Week, "permutations for every case\n"))
+  RandomSimulationsByWeeks_RowMeans=foreach(i=1:length(RandomSimulationsByWeeks_Clean)) %do% {
+    RandomSimulationsByWeeks_NonZeros=lapply(RandomSimulationsByWeeks_Clean[[i]], function(x) replace(x, x==0, NA))
+    RandomSimulationsByWeeks_Dataframes=data.frame(RandomSimulationsByWeeks_NonZeros, row.names = NULL) 
+    RandomSimulationsByWeeks_RowMeans=rowMeans(RandomSimulationsByWeeks_Dataframes, na.rm=TRUE)
+  }
+  
+  cat(paste("Min distance means of", Week, "permutations for every Week N\n"))
+  RandomSimulationsByWeeks_MeansByNWeeks=foreach(i=1:length(RandomSimulationsByWeeks_RowMeans)) %do% {
+    RandomSimulationsByWeeks_RowMeans_Unlist=unlist(RandomSimulationsByWeeks_RowMeans[[i]])
+    RandomSimulationsByWeeks_RowMeans_NonZeros=RandomSimulationsByWeeks_RowMeans_Unlist[RandomSimulationsByWeeks_RowMeans_Unlist != 0]
+    mean(RandomSimulationsByWeeks_RowMeans_NonZeros, na.rm = T) 
+  }
+  #UnWeighted
+  cat("Convert random simulations into dataframes\n")
+  RandomSimulationsByWeeks_UnWeighted=foreach(i=1:length(AllPermutatationMinimumDistances_UnWeighted[[1]])) %do% lapply(AllPermutatationMinimumDistances_UnWeighted, `[[`, i) #get first elements i of each list
+  RandomSimulationsByWeeks_UnWeighted_Clean=foreach(i=1:length(RandomSimulationsByWeeks_UnWeighted)) %do% CleaningFunction(RandomSimulationsByWeeks_UnWeighted[[i]])
+  # RandomSimulationsByWeeks_UnWeighted_Dataframes=foreach(i=1:length(RandomSimulationsByWeeks_UnWeighted_Clean)) %do% data.frame(RandomSimulationsByWeeks_UnWeighted_Clean[[i]], row.names = NULL) 
+  cat(paste("Row Means of", Week, "permutations for every case\n"))
+  RandomSimulationsByWeeks_UnWeighted_RowMeans=foreach(i=1:length(RandomSimulationsByWeeks_UnWeighted_Clean)) %do% {
+    RandomSimulationsByWeeks_NonZeros=lapply(RandomSimulationsByWeeks_UnWeighted_Clean[[i]], function(x) replace(x, x==0, NA))
+    RandomSimulationsByWeeks_Dataframes=data.frame(RandomSimulationsByWeeks_NonZeros, row.names = NULL) 
+    RandomSimulationsByWeeks_RowMeans=rowMeans(RandomSimulationsByWeeks_Dataframes, na.rm=TRUE)
+  }
+  cat(paste("Min distance means of", Week, "permutations for every Week N\n"))
+  RandomSimulationsByWeeks_UnWeighted_MeansByNWeeks=foreach(i=1:length(RandomSimulationsByWeeks_UnWeighted_RowMeans)) %do% {
+    RandomSimulationsByWeeks_RowMeans_Unlist=unlist(RandomSimulationsByWeeks_UnWeighted_RowMeans[[i]])
+    RandomSimulationsByWeeks_RowMeans_NonZeros=RandomSimulationsByWeeks_RowMeans_Unlist[RandomSimulationsByWeeks_RowMeans_Unlist != 0]
+    mean(RandomSimulationsByWeeks_RowMeans_NonZeros, na.rm = T) 
+  }
+  #GeoDist
+  cat("Convert random simulations into dataframes\n")
+  RandomSimulationsByWeeks_GeoDist=foreach(i=1:length(AllPermutatationMinimumDistances_GeoDist[[1]])) %do% lapply(AllPermutatationMinimumDistances_GeoDist, `[[`, i) #get first elements i of each list
+  RandomSimulationsByWeeks_GeoDist_Clean=foreach(i=1:length(RandomSimulationsByWeeks_GeoDist)) %do% CleaningFunction(RandomSimulationsByWeeks_GeoDist[[i]])
+  # RandomSimulationsByWeeks_GeoDist_Dataframes=foreach(i=1:length(RandomSimulationsByWeeks_GeoDist_Clean)) %do% data.frame(RandomSimulationsByWeeks_GeoDist_Clean[[i]], row.names = NULL) 
+  cat(paste("Row Means of", Week, "permutations for every case\n"))
+  RandomSimulationsByWeeks_GeoDist_RowMeans=foreach(i=1:length(RandomSimulationsByWeeks_GeoDist_Clean)) %do% {
+    RandomSimulationsByWeeks_NonZeros=lapply(RandomSimulationsByWeeks_GeoDist_Clean[[i]], function(x) replace(x, x==0, NA))
+    RandomSimulationsByWeeks_Dataframes=data.frame(RandomSimulationsByWeeks_NonZeros, row.names = NULL) 
+    RandomSimulationsByWeeks_RowMeans=rowMeans(RandomSimulationsByWeeks_Dataframes, na.rm=TRUE)
+  }
+  cat(paste("Min distance means of", Week, "permutations for every Week N\n"))
+  RandomSimulationsByWeeks_GeoDist_MeansByNWeeks=foreach(i=1:length(RandomSimulationsByWeeks_GeoDist_RowMeans)) %do% {
+    RandomSimulationsByWeeks_RowMeans_Unlist=unlist(RandomSimulationsByWeeks_GeoDist_RowMeans[[i]])
+    RandomSimulationsByWeeks_RowMeans_NonZeros=RandomSimulationsByWeeks_RowMeans_Unlist[RandomSimulationsByWeeks_RowMeans_Unlist != 0]
+    mean(RandomSimulationsByWeeks_RowMeans_NonZeros, na.rm = T) 
+  }
+  
+  cat("Get table\n")
+  MinDistancesTableByMeanPerNWeeks=as.data.frame(cbind(unlist(MinimumDistances_MeansByNWeeks), 
+                                                       unlist(MinimumDistances_UnWeighted_MeansByNWeeks), 
+                                                       unlist(MinimumDistances_GeoDist_MeansByNWeeks),
+                                                       unlist(RandomSimulationsByWeeks_MeansByNWeeks), 
+                                                       unlist(RandomSimulationsByWeeks_UnWeighted_MeansByNWeeks),
+                                                       unlist(RandomSimulationsByWeeks_GeoDist_MeansByNWeeks)))
+  colnames(MinDistancesTableByMeanPerNWeeks)=c("MinimumDistances_MeansByNWeeks", "MinimumDistances_UnWeighted_MeansByNWeeks", "MinimumDistances_GeoDist_MeansByNWeeks", 
+                                               "RandomSimulationsByWeeks_MeansByNWeeks", "RandomSimulationsByWeeks_UnWeighted_MeansByNWeeks", "RandomSimulationsByWeeks_GeoDist_MeansByNWeeks")
+  
+  return(MinDistancesTableByMeanPerNWeeks)
+}
 
-
+getMeanMinimumDistances_Simple=function(MinimumDistances, AllPermutatationMinimumDistances){
+  Week=Week
+  
+  #Original
+  #Weighted
+  cat("Mean distance for every Week N for candidate transmitters\n")
+  MinimumDistances_Clean=foreach(i=1:length(MinimumDistances)) %do% CleaningFunction2(MinimumDistances[[i]])
+  MinimumDistances_MeansByNWeeks=foreach(i=1:length(MinimumDistances_Clean)) %do% mean(unlist(MinimumDistances_Clean[[i]]), na.rm = T)
+  
+  #Permutations
+  #Weighted
+  cat("Convert random simulations into dataframes\n")
+  RandomSimulationsByWeeks=foreach(i=1:length(AllPermutatationMinimumDistances[[1]])) %do% lapply(AllPermutatationMinimumDistances, `[[`, i) #get first elements i of each list
+  RandomSimulationsByWeeks_Clean=foreach(i=1:length(RandomSimulationsByWeeks)) %do% CleaningFunction(RandomSimulationsByWeeks[[i]])
+  RandomSimulationsByWeeks_Dataframes=foreach(i=1:length(RandomSimulationsByWeeks_Clean)) %do% data.frame(RandomSimulationsByWeeks_Clean[[i]], row.names = NULL) 
+  cat(paste("Row Means of", Week, "permutations for every case\n"))
+  RandomSimulationsByWeeks_RowMeans=foreach(i=1:length(RandomSimulationsByWeeks_Dataframes)) %do% rowMeans(RandomSimulationsByWeeks_Dataframes[[i]], na.rm=TRUE)
+  cat(paste("Min weighted distance means of", Week, "permutations for every Week N\n"))
+  RandomSimulationsByWeeks_MeansByNWeeks=foreach(i=1:length(RandomSimulationsByWeeks_RowMeans)) %do% mean(unlist(RandomSimulationsByWeeks_RowMeans[[i]]), na.rm = T)
+  
+  cat("Get table\n")
+  MinDistancesTableByMeanPerNWeeks=as.data.frame(cbind(unlist(MinimumDistances_MeansByNWeeks),
+                                                       unlist(RandomSimulationsByWeeks_MeansByNWeeks)))
+  colnames(MinDistancesTableByMeanPerNWeeks)=c("Means_Observed", "Means_Permutations")
+  
+  return(MinDistancesTableByMeanPerNWeeks)
+}
 
 
 #################################################################################################################################################################

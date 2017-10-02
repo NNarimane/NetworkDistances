@@ -25,6 +25,27 @@ if(Transformed){
   load("../Hospital_Network/HospitalNetwork/Data/Department Network.RData")
 }
 
+####################
+#### PARAMETERS ####
+
+cat("Set Maximum Number of Days to Test\n")
+Week=8
+
+cat("Weighted or Un-Weighted Shortest Path Calculations\n")
+Weighted=T
+if(Weighted){
+  cat("Set Weights and Algorithm to Calculate Weighted Shortest Paths\n")
+  weights = E(directed.graph_Dept)$weight
+  algorithm = "dijkstra"
+}else{
+  cat("Disable Weights and Algorithm to Calculate Shortest Paths\n")
+  weights = NA
+  algorithm = "automatic"
+}
+
+cat("Number of Simulations\n")
+Nruns=50
+
 ##########################
 #### STEP 1: CPE DATA ####
 
@@ -50,9 +71,6 @@ rownames(data)=1:nrow(data)
 ############################################
 #### STEP 2: GET CANDIDATE TRANSMITTERS ####
 
-cat("Set Maximum Number of Days to Test\n")
-Week=8
-
 cat(paste("Get Candidate Transmitters for Week 1 to", Week, "by Mechanism\n"))
 NonPermutation=T
 # CandidateTransmitters_byWeek_byMechanism=foreach(i=1:Week) %do% getCandidateTransmitters_byWeek_byMechanism(data=data, i)
@@ -62,18 +80,6 @@ load("Results/CandidateTransmitters_byWeek_byMechanism.RData")
 ###################################
 #### STEP 3: GET MIN DISTANCES ####
 
-cat("Weighted or Un-Weighted Shortest Path Calculations\n")
-Weighted=T
-if(Weighted){
-  cat("Set Weights and Algorithm to Calculate Weighted Shortest Paths\n")
-  weights = E(directed.graph_Dept)$weight
-  algorithm = "dijkstra"
-}else{
-  cat("Disable Weights and Algorithm to Calculate Shortest Paths\n")
-  weights = NA
-  algorithm = "automatic"
-}
-
 cat("Get Min Distances\n")
 if(Weighted){
       cat("Get Weighted Distances for Candidate Transmitters by Mechanism\n")
@@ -81,9 +87,11 @@ if(Weighted){
       # save(MinimumDistances_PotentialInfector_byWeek_byMechanism, file="Results/MinimumDistances_PotentialInfector_byWeek_byMechanism.RData")
       load("Results/MinimumDistances_PotentialInfector_byWeek_byMechanism.RData")
     }else{
-      # cat("Get UnWeighted Distances for Candidate Transmitters by Mechanism\n")
-      # MinimumDistances_PotentialInfector_byWeek_byMechanism=foreach(i=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(i, CandidateTransmitters_byWeek_byMechanism[[i]], weights = weights, algorithm = algorithm)
-    }
+      cat("Get Un-Weighted Distances for Candidate Transmitters by Mechanism\n")
+      # MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeighted=foreach(i=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(i, CandidateTransmitters_byWeek_byMechanism[[i]], weights = weights, algorithm = algorithm)
+      # save(MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeighted, file="Results/MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeighted.RData")
+      load("Results/MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeighted.RData")
+}
  
 
 #####################################################################
@@ -99,30 +107,28 @@ if(Weighted){
 #} 
 
 #Parallel
-cat("Numer of cores to use\n")
-cores=5
-
-cat("Maximum meanGT time to test\n")
-Nruns=50
-
-cat("Make clusters for parallel\n")
-cl=makeCluster(cores)
-registerDoSNOW(cl)
-getDoParWorkers()
-
-cat("RUN PARALLEL\n")
-AllRuns_CandidateTransmitters_Permutations_byMechanism <- foreach(icount(Nruns), .packages=c('igraph', 'foreach')) %dopar% {
-  NonPermutation=F
-  cat("Get Weekly Random Candidate Transmitters from Permutations\n")
-  CandidateTransmitters_Permutations_byWeek=foreach(j=1:Week) %do% getCandidateTransmitters_byWeek_byMechanism(data, j)
-} 
-
-cat("Stop parallel\n")
-stopCluster(cl)
-print("Cluster stopped")
-registerDoSEQ()
-
-save(AllRuns_CandidateTransmitters_Permutations_byMechanism, file="Results/50 Permutations (Reshuffled Department)/AllRuns_CandidateTransmitters_Permutations_byMechanism.RData")
+# cat("Numer of cores to use\n")
+# cores=5
+# 
+# cat("Make clusters for parallel\n")
+# cl=makeCluster(cores)
+# registerDoSNOW(cl)
+# getDoParWorkers()
+# 
+# cat("RUN PARALLEL\n")
+# AllRuns_CandidateTransmitters_Permutations_byMechanism_Reassingment <- foreach(icount(Nruns), .packages=c('igraph', 'foreach')) %dopar% {
+#   NonPermutation=F
+#   cat("Get Weekly Random Candidate Transmitters from Permutations\n")
+#   CandidateTransmitters_Permutations_byWeek=foreach(j=1:Week) %do% getCandidateTransmitters_byWeek_byMechanism(data, j)
+# } 
+# 
+# cat("Stop parallel\n")
+# stopCluster(cl)
+# print("Cluster stopped")
+# registerDoSEQ()
+# 
+# save(AllRuns_CandidateTransmitters_Permutations_byMechanism_Reassingment, file="Results/50 Permutations (Reassigned Department)/AllRuns_CandidateTransmitters_Permutations_byMechanism_Reassingment.RData")
+load("Results/50 Permutations (Reassigned Department)/AllRuns_CandidateTransmitters_Permutations_byMechanism.RData")
 
 #########################################################
 #### STEP 4b: GET MINIMUM DISTANCES FROM PREMUATIONS ####
@@ -135,36 +141,38 @@ save(AllRuns_CandidateTransmitters_Permutations_byMechanism, file="Results/50 Pe
 
 
 #Parallel
-cat("Numer of cores to use\n")
-cores=5
+# cat("Numer of cores to use\n")
+# cores=5
+# 
+# cat("Maximum meanGT time to test\n")
+# Nruns=Nruns
+# 
+# cat("Make clusters for parallel\n")
+# cl=makeCluster(cores)
+# registerDoSNOW(cl)
+# getDoParWorkers()
+# 
+# AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment=foreach(run=1:Nruns, .packages=c('igraph', 'foreach')) %dopar% {
+#   cat("Get Minimum Distance (Between Potential Infector and Case) for Permutations\n")
+#   OneRun_CandidateTransmitters_Permutations_byMechanism_Reassingment=AllRuns_CandidateTransmitters_Permutations_byMechanism_Reassingment[[run]]
+#   MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment=foreach(j=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(j, OneRun_CandidateTransmitters_Permutations_byMechanism_Reassingment[[j]], weights = weights, algorithm = algorithm)
+# }
+# 
+# cat("Stop parallel\n")
+# stopCluster(cl)
+# print("Cluster stopped")
+# registerDoSEQ()
+# 
+# save(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment, file="Results/50 Permutations (Reassigned Department)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment.RData")
+load("Results/50 Permutations (Reassigned Department)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment.RData")
 
-cat("Maximum meanGT time to test\n")
-Nruns=Nruns
-
-cat("Make clusters for parallel\n")
-cl=makeCluster(cores)
-registerDoSNOW(cl)
-getDoParWorkers()
-
-cat("RUN PARALLEL\n")
-AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism=foreach(run=1:Nruns, .packages=c('igraph', 'foreach')) %dopar% {
-  cat("Get Minimum Distance (Between Potential Infector and Case) for Permutations\n")
-  OneRun_CandidateTransmitters_Permutations_byMechanism=AllRuns_CandidateTransmitters_Permutations_byMechanism[[run]]
-  MinimumDistances_CandidateTransmitters_Permutations_byMechanism=foreach(j=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(j, OneRun_CandidateTransmitters_Permutations_byMechanism[[j]], weights = weights, algorithm = algorithm)
-} 
-
-cat("Stop parallel\n")
-stopCluster(cl)
-print("Cluster stopped")
-registerDoSEQ()
-
-save(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism, file="Results/50 Permutations (Reshuffled Department)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism.RData")
 
 #############################################################
 #### STEP 4c: AVERAGE MINIMUM DISTANCES FROM PERMUATIONS ####
 
 cat("Get Average of Minimum Distance (Between Potential Infector and Case)\n")
-Average_MinimumDistances_CandidateTransmitters_Permutations_byMechanism=getAverageMinDistances_CandidateTransmitters_Permutations_byWeek(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism)
+# Average_MinimumDistances_CandidateTransmitters_Permutations_byMechanism=getAverageMinDistances_CandidateTransmitters_Permutations_byWeek(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism)
+Average_MinimumDistances_CandidateTransmitters_Permutations_byMechanism=getAverageMinDistances_CandidateTransmitters_Permutations_byWeek(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment)
 
 
 #########################################
@@ -181,7 +189,7 @@ Results$StatSigDiff=Results$WilcoxonPairedRankTestPValues < 0.05
 #If stat. sig. p-value results (TRUE), reject H0 (meaning that the distributions differ)
 
 cat("Save Results\n")
-write.csv(Results, file=paste0(writingDir,"Wilcoxon Rank Sum Test Results for Week 1 to",Week,"for", Nruns,"Permutations (Reshuffled Mechanism of Resistance and Importation Status).csv"), row.names = F)
+write.csv(Results, file=paste0(writingDir,"50 Permutations (Reassigned Department)/Wilcoxon Rank Sum Test Results for Week 1 to",Week,"for", Nruns,"Permutations (Reassigned Departments).csv"), row.names = F)
 
 #######################################
 #### INTERPRETATION OF THE RESULTS ####
@@ -193,16 +201,4 @@ write.csv(Results, file=paste0(writingDir,"Wilcoxon Rank Sum Test Results for We
 # Step 4: Conclude: Department transfer network does not better explain CPE episodes
 
 
-#############################################################################################
-#### Using Distribution of 100 simulations: Compare where potential infector values fall ####
-################ Calculate proportions, and values of shortest path #########################
-#############################################################################################
 
-cat("Get Proportion Tables\n")
-ProportionTables_byMechanism=get5thQuantiles(Week, MinimumDistances_PotentialInfector_byWeek_byMechanism, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism)
-MeanMinimumDistances_byMechanism=getMeanMinimumDistances(MinimumDistances_PotentialInfector_byWeek_byMechanism, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism)
-ProportionTables_withMinDistances_byMechanism=cbind(ProportionTables_byMechanism[2,], MeanMinimumDistances_byMechanism)
-colnames(ProportionTables_withMinDistances_byMechanism)=c("ProportionOriginalMinDistUnder5thPercentileOfPermutatedMinDist", "Original_MeanMinimumDistances_ByNWeeks", "Permutations_MeanMinimumDistances_ByWeeks")
-
-cat("Save Table\n")
-write.csv(ProportionTables_withMinDistances_byMechanism, file = paste0(writingDir,"Proportions and Mean Min Distances Table for Week 1 to",Week,"for", Nruns,"Permutations (Reshuffled Mechanism of Resistance and Importation Status).csv"))

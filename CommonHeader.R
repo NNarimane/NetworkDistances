@@ -18,6 +18,7 @@ library("doSNOW")
 library("snow")
 library("foreach")
 library("splitstackshape")
+library("geosphere")
 
 #########################
 #### SET ENVIRONMENT ####
