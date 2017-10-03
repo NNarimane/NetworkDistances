@@ -28,8 +28,16 @@ if(Transformed){
 ####################
 #### PARAMETERS ####
 
-cat("Set Maximum Number of Days to Test\n")
-Week=8
+
+cat("Set Maximum Number of Days or Weeks to Test\n")
+Week=F
+if(Week){
+  cat("Set Maximum Number of Weeks to Test\n")
+  Week=8
+}else{
+  cat("Set Maximum Number of Days to Test\n")
+  Day=60
+}
 
 cat("Weighted or Un-Weighted Shortest Path Calculations\n")
 Weighted=T
@@ -45,6 +53,7 @@ if(Weighted){
 
 cat("Number of Simulations\n")
 Nruns=50
+
 
 ##########################
 #### STEP 1: CPE DATA ####
@@ -71,100 +80,194 @@ rownames(data)=1:nrow(data)
 ############################################
 #### STEP 2: GET CANDIDATE TRANSMITTERS ####
 
-cat(paste("Get Candidate Transmitters for Week 1 to", Week, "by Mechanism\n"))
-NonPermutation=T
-# CandidateTransmitters_byWeek_byMechanism=foreach(i=1:Week) %do% getCandidateTransmitters_byWeek_byMechanism(data=data, i)
-# save(CandidateTransmitters_byWeek_byMechanism, file="Results/CandidateTransmitters_byWeek_byMechanism.RData")
-load("Results/CandidateTransmitters_byWeek_byMechanism.RData")
+if(Week){
+  cat(paste("Get Candidate Transmitters for Week 1 to", Week, "by Mechanism\n"))
+  NonPermutation=T
+  # CandidateTransmitters_byWeek_byMechanism=foreach(i=1:Week) %do% getCandidateTransmitters_byWeek_byMechanism_Reassignment(data=data, i)
+  # save(CandidateTransmitters_byWeek_byMechanism, file="Results/50 Permutations (Corrected)/CandidateTransmitters_byWeek_byMechanism.RData")
+  load("Results/50 Permutations (Corrected)/CandidateTransmitters_byWeek_byMechanism.RData")
+}else{
+  cat(paste("Get Candidate Transmitters for Day 1 to", Day, "by Mechanism\n"))
+  NonPermutation=T
+  CandidateTransmitters_byDay_byMechanism=foreach(i=1:Day) %do% getCandidateTransmitters_byDay_byMechanism_Reassignment(data=data, i)
+  save(CandidateTransmitters_byDay_byMechanism, file="Results/50 Permutations (Corrected) Days/CandidateTransmitters_byDay_byMechanism.RData")
+  # load("Results/50 Permutations (Corrected)/CandidateTransmitters_byDay_byMechanism.RData")
+}
 
 ###################################
 #### STEP 3: GET MIN DISTANCES ####
 
-cat("Get Min Distances\n")
-if(Weighted){
-      cat("Get Weighted Distances for Candidate Transmitters by Mechanism\n")
-      # MinimumDistances_PotentialInfector_byWeek_byMechanism=foreach(i=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(i, CandidateTransmitters_byWeek_byMechanism[[i]], weights = weights, algorithm = algorithm)
-      # save(MinimumDistances_PotentialInfector_byWeek_byMechanism, file="Results/MinimumDistances_PotentialInfector_byWeek_byMechanism.RData")
-      load("Results/MinimumDistances_PotentialInfector_byWeek_byMechanism.RData")
-    }else{
-      cat("Get Un-Weighted Distances for Candidate Transmitters by Mechanism\n")
-      # MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeighted=foreach(i=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(i, CandidateTransmitters_byWeek_byMechanism[[i]], weights = weights, algorithm = algorithm)
-      # save(MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeighted, file="Results/MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeighted.RData")
-      load("Results/MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeighted.RData")
+if(Week){
+  cat("Get Weekly Min Distances\n")
+  if(Weighted){
+    cat("Get Weighted Distances for Candidate Transmitters by Mechanism\n")
+    # MinimumDistances_PotentialInfector_byWeek_byMechanism=foreach(i=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(i, CandidateTransmitters_byWeek_byMechanism[[i]], weights = weights, algorithm = algorithm)
+    # save(MinimumDistances_PotentialInfector_byWeek_byMechanism, file="Results/50 Permutations (Corrected)/MinimumDistances_PotentialInfector_byWeek_byMechanism.RData")
+    load("Results/50 Permutations (Corrected)/MinimumDistances_PotentialInfector_byWeek_byMechanism.RData")
+  }else{
+    cat("Get Un-Weighted Distances for Candidate Transmitters by Mechanism\n")
+    # MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeighted=foreach(i=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(i, CandidateTransmitters_byWeek_byMechanism[[i]], weights = weights, algorithm = algorithm)
+    # save(MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeighted, file="Results/MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeighted.RData")
+    # load("Results/MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeighted.RData")
+  }
+}else{
+  cat("Get Daily Min Distances\n")
+  if(Weighted){
+    cat("Get Weighted Distances for Candidate Transmitters by Mechanism\n")
+    MinimumDistances_PotentialInfector_byDay_byMechanism_byDay=foreach(i=1:Day) %do% getMinimumDistances_CandidateTransmitters_byDay(i, CandidateTransmitters_byDay_byMechanism[[i]], weights = weights, algorithm = algorithm)
+    save(MinimumDistances_PotentialInfector_byDay_byMechanism_byDay, file="Results/50 Permutations (Corrected) Days/MinimumDistances_PotentialInfector_byDay_byMechanism_byDay.RData")
+    # load("Results/50 Permutations (Corrected) Days/MinimumDistances_PotentialInfector_byDay_byMechanism_byDay.RData")
+  }else{
+    cat("Get Un-Weighted Distances for Candidate Transmitters by Mechanism\n")
+    # MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeighted=foreach(i=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(i, CandidateTransmitters_byWeek_byMechanism[[i]], weights = weights, algorithm = algorithm)
+    # save(MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeighted, file="Results/MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeighted.RData")
+    # load("Results/MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeighted.RData")
+  }
+  
 }
- 
+
 
 #####################################################################
 #### STEP 4a: GET RANDOM CANDIDATE TRANSMITTERS FROM PREMUATIONS ####
 
-#cat("Number of Simulations\n")
-#Nruns=200
+if(Week){
+  #cat("Number of Simulations\n")
+  #Nruns=200
+  
+  #cat("Get All Runs of Weekly Candidate Transmitters from Permutations\n")
+  #AllRuns_CandidateTransmitters_Permutations_byMechanism <- foreach(runs=rep(1,Nruns)) %do% {
+  #  cat("Get Weekly Random Candidate Transmitters from Permutations\n")
+  #  CandidateTransmitters_Permutations_byWeek=foreach(i=1:Week) %do% getCandidateTransmitters_byWeek_byMechanism_Reassignment(i)
+  #} 
+  
+  #Parallel
+  # cat("Numer of cores to use\n")
+  # cores=5
+  # 
+  # cat("Make clusters for parallel\n")
+  # cl=makeCluster(cores)
+  # registerDoSNOW(cl)
+  # getDoParWorkers()
+  # 
+  # cat("RUN PARALLEL\n")
+  # AllRuns_CandidateTransmitters_Permutations_byMechanism_Reassingment <- foreach(icount(Nruns), .packages=c('igraph', 'foreach')) %dopar% {
+  #   NonPermutation=F
+  #   cat("Get Weekly Random Candidate Transmitters from Permutations\n")
+  #   CandidateTransmitters_Permutations_byWeek=foreach(j=1:Week) %do% getCandidateTransmitters_byWeek_byMechanism_Reassignment(data, j)
+  # }
+  # 
+  # cat("Stop parallel\n")
+  # stopCluster(cl)
+  # print("Cluster stopped")
+  # registerDoSEQ()
+  
+  # save(AllRuns_CandidateTransmitters_Permutations_byMechanism_Reassingment, file="Results/50 Permutations (Corrected)/AllRuns_CandidateTransmitters_Permutations_byMechanism_Reassingment.RData")
+  load("Results/50 Permutations (Corrected)/AllRuns_CandidateTransmitters_Permutations_byMechanism_Reassingment.RData")
+}else{
+  #cat("Number of Simulations\n")
+  #Nruns=200
+  
+  #cat("Get All Runs of Daily Candidate Transmitters from Permutations\n")
+  #AllRuns_CandidateTransmitters_Permutations_byMechanism <- foreach(runs=rep(1,Nruns)) %do% {
+  #  cat("Get Daily Random Candidate Transmitters from Permutations\n")
+  #  CandidateTransmitters_Permutations_byWeek=foreach(i=1:Week) %do% getCandidateTransmitters_byDay_byMechanism_Reassignment(i)
+  #} 
+  
+  #Parallel
+  cat("Numer of cores to use\n")
+  cores=5
 
-#cat("Get All Runs of Weekly Candidate Transmitters from Permutations\n")
-#AllRuns_CandidateTransmitters_Permutations_byMechanism <- foreach(runs=rep(1,Nruns)) %do% {
-#  cat("Get Weekly Random Candidate Transmitters from Permutations\n")
-#  CandidateTransmitters_Permutations_byWeek=foreach(i=1:Week) %do% getCandidateTransmitters_Permutations_byWeek(i)
-#} 
+  cat("Make clusters for parallel\n")
+  cl=makeCluster(cores)
+  registerDoSNOW(cl)
+  getDoParWorkers()
 
-#Parallel
-# cat("Numer of cores to use\n")
-# cores=5
-# 
-# cat("Make clusters for parallel\n")
-# cl=makeCluster(cores)
-# registerDoSNOW(cl)
-# getDoParWorkers()
-# 
-# cat("RUN PARALLEL\n")
-# AllRuns_CandidateTransmitters_Permutations_byMechanism_Reassingment <- foreach(icount(Nruns), .packages=c('igraph', 'foreach')) %dopar% {
-#   NonPermutation=F
-#   cat("Get Weekly Random Candidate Transmitters from Permutations\n")
-#   CandidateTransmitters_Permutations_byWeek=foreach(j=1:Week) %do% getCandidateTransmitters_byWeek_byMechanism(data, j)
-# } 
-# 
-# cat("Stop parallel\n")
-# stopCluster(cl)
-# print("Cluster stopped")
-# registerDoSEQ()
-# 
-# save(AllRuns_CandidateTransmitters_Permutations_byMechanism_Reassingment, file="Results/50 Permutations (Reassigned Department)/AllRuns_CandidateTransmitters_Permutations_byMechanism_Reassingment.RData")
-load("Results/50 Permutations (Reassigned Department)/AllRuns_CandidateTransmitters_Permutations_byMechanism.RData")
+  cat("RUN PARALLEL\n")
+  AllRuns_CandidateTransmitters_Permutations_byMechanism_Reassingment_byDay <- foreach(icount(Nruns), .packages=c('igraph', 'foreach')) %dopar% {
+    NonPermutation=F
+    cat("Get Daily Random Candidate Transmitters from Permutations\n")
+    CandidateTransmitters_Permutations_byDay=foreach(j=1:Day) %do% getCandidateTransmitters_byDay_byMechanism_Reassignment(data, j)
+  }
+
+  cat("Stop parallel\n")
+  stopCluster(cl)
+  print("Cluster stopped")
+  registerDoSEQ()
+  
+  save(t, file="Results/50 Permutations (Corrected) Days/AllRuns_CandidateTransmitters_Permutations_byMechanism_Reassingment_byDay.RData")
+  # load("Results/50 Permutations (Corrected) Days/AllRuns_CandidateTransmitters_Permutations_byMechanism_Reassingment_byDay.RData")
+}
 
 #########################################################
 #### STEP 4b: GET MINIMUM DISTANCES FROM PREMUATIONS ####
 
-#cat("Get Minimum Distance (Between Potential Infector and Case) for Permutations\n")
-#AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism=foreach(run=1:Nruns) %do% {
-#  OneRun_CandidateTransmitters_Permutations_byMechanism=AllRuns_CandidateTransmitters_Permutations_byMechanism[[run]]
-#  MinimumDistances_CandidateTransmitters_Permutations_byMechanism=foreach(i=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(i, OneRun_CandidateTransmitters_Permutations_byMechanism[[i]], weights = weights, algorithm = algorithm)
-#} 
+if(Week){
+  #cat("Get Minimum Distance (Between Potential Infector and Case) for Permutations\n")
+  #AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism=foreach(run=1:Nruns) %do% {
+  #  OneRun_CandidateTransmitters_Permutations_byMechanism=AllRuns_CandidateTransmitters_Permutations_byMechanism[[run]]
+  #  MinimumDistances_CandidateTransmitters_Permutations_byMechanism=foreach(i=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(i, OneRun_CandidateTransmitters_Permutations_byMechanism[[i]], weights = weights, algorithm = algorithm)
+  #} 
+  
+  
+  #Parallel
+  # cat("Numer of cores to use\n")
+  # cores=5
+  # 
+  # cat("Maximum meanGT time to test\n")
+  # Nruns=Nruns
+  # 
+  # cat("Make clusters for parallel\n")
+  # cl=makeCluster(cores)
+  # registerDoSNOW(cl)
+  # getDoParWorkers()
+  # 
+  # AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment=foreach(run=1:Nruns, .packages=c('igraph', 'foreach')) %dopar% {
+  #   cat("Get Minimum Distance (Between Potential Infector and Case) for Permutations\n")
+  #   OneRun_CandidateTransmitters_Permutations_byMechanism_Reassingment=AllRuns_CandidateTransmitters_Permutations_byMechanism_Reassingment[[run]]
+  #   MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment=foreach(j=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(j, OneRun_CandidateTransmitters_Permutations_byMechanism_Reassingment[[j]], weights = weights, algorithm = algorithm)
+  # }
+  # 
+  # cat("Stop parallel\n")
+  # stopCluster(cl)
+  # print("Cluster stopped")
+  # registerDoSEQ()
+  
+  # save(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment, file="Results/50 Permutations (Corrected)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment.RData")
+  load("Results/50 Permutations (Corrected)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment.RData")
+}else{
+  #cat("Get Minimum Distance (Between Potential Infector and Case) for Permutations\n")
+  #AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism=foreach(run=1:Nruns) %do% {
+  #  OneRun_CandidateTransmitters_Permutations_byMechanism=AllRuns_CandidateTransmitters_Permutations_byMechanism[[run]]
+  #  MinimumDistances_CandidateTransmitters_Permutations_byMechanism=foreach(i=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(i, OneRun_CandidateTransmitters_Permutations_byMechanism[[i]], weights = weights, algorithm = algorithm)
+  #} 
+  
+  
+  #Parallel
+  cat("Numer of cores to use\n")
+  cores=5
 
+  cat("Maximum meanGT time to test\n")
+  Nruns=Nruns
 
-#Parallel
-# cat("Numer of cores to use\n")
-# cores=5
-# 
-# cat("Maximum meanGT time to test\n")
-# Nruns=Nruns
-# 
-# cat("Make clusters for parallel\n")
-# cl=makeCluster(cores)
-# registerDoSNOW(cl)
-# getDoParWorkers()
-# 
-# AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment=foreach(run=1:Nruns, .packages=c('igraph', 'foreach')) %dopar% {
-#   cat("Get Minimum Distance (Between Potential Infector and Case) for Permutations\n")
-#   OneRun_CandidateTransmitters_Permutations_byMechanism_Reassingment=AllRuns_CandidateTransmitters_Permutations_byMechanism_Reassingment[[run]]
-#   MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment=foreach(j=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(j, OneRun_CandidateTransmitters_Permutations_byMechanism_Reassingment[[j]], weights = weights, algorithm = algorithm)
-# }
-# 
-# cat("Stop parallel\n")
-# stopCluster(cl)
-# print("Cluster stopped")
-# registerDoSEQ()
-# 
-# save(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment, file="Results/50 Permutations (Reassigned Department)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment.RData")
-load("Results/50 Permutations (Reassigned Department)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment.RData")
+  cat("Make clusters for parallel\n")
+  cl=makeCluster(cores)
+  registerDoSNOW(cl)
+  getDoParWorkers()
+
+  AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment_byDay=foreach(run=1:Nruns, .packages=c('igraph', 'foreach')) %dopar% {
+    cat("Get Minimum Distance (Between Potential Infector and Case) for Permutations\n")
+    OneRun_CandidateTransmitters_Permutations_byMechanism_Reassingment=AllRuns_CandidateTransmitters_Permutations_byMechanism_Reassingment_byDay[[run]]
+    MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment=foreach(j=1:Day) %do% getMinimumDistances_CandidateTransmitters_byDay(j, OneRun_CandidateTransmitters_Permutations_byMechanism_Reassingment[[j]], weights = weights, algorithm = algorithm)
+  }
+
+  cat("Stop parallel\n")
+  stopCluster(cl)
+  print("Cluster stopped")
+  registerDoSEQ()
+  
+  save(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment_byDay, file="Results/50 Permutations (Corrected) Days/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment_byDay.RData")
+  # load("Results/50 Permutations (Corrected) Days/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment_byDay.RData")
+}
 
 
 #############################################################
@@ -189,7 +292,7 @@ Results$StatSigDiff=Results$WilcoxonPairedRankTestPValues < 0.05
 #If stat. sig. p-value results (TRUE), reject H0 (meaning that the distributions differ)
 
 cat("Save Results\n")
-write.csv(Results, file=paste0(writingDir,"50 Permutations (Reassigned Department)/Wilcoxon Rank Sum Test Results for Week 1 to",Week,"for", Nruns,"Permutations (Reassigned Departments).csv"), row.names = F)
+write.csv(Results, file=paste0(writingDir,"50 Permutations (Corrected)/Wilcoxon Rank Sum Test Results for Week 1 to",Week,"for", Nruns,"Permutations (Reassigned Departments).csv"), row.names = F)
 
 #######################################
 #### INTERPRETATION OF THE RESULTS ####

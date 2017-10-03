@@ -73,14 +73,16 @@ cat("Get Min Distances Weighted and corresponding UnWeighted and GeoDist\n")
 # MinimumDistances_PotentialInfector_byWeek_byMechanism=foreach(i=1:Week) %do% getMinimumDistances_CandidateTransmitters_byWeek(i, CandidateTransmitters_byWeek_byMechanism[[i]], weights = weights, algorithm = algorithm)
 # MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeightedEquivalent=foreach(i=1:Week) %do% getMinimumUnWeightedDistances_CandidateTransmitters_byWeek(i, CandidateTransmitters_byWeek_byMechanism[[i]], weights = weights, algorithm = algorithm)
 # MinimumDistances_PotentialInfector_byWeek_byMechanism_GeoDistEquivalent=foreach(i=1:Week) %do% getMinimumGeoDistances_CandidateTransmitters_byWeek(i, CandidateTransmitters_byWeek_byMechanism[[i]], weights = weights, algorithm = algorithm)
-load("Results/MinimumDistances_PotentialInfector_byWeek_byMechanism.RData")
-load("Results/MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeightedEquivalent.RData")
-load("Results/MinimumDistances_PotentialInfector_byWeek_byMechanism_GeoDistEquivalent.RData")
+# load("Results/MinimumDistances_PotentialInfector_byWeek_byMechanism.RData")
+# load("Results/MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeightedEquivalent.RData")
+# load("Results/MinimumDistances_PotentialInfector_byWeek_byMechanism_GeoDistEquivalent.RData")
+load("Results/50 Permutations (Corrected)/MinimumDistances_PotentialInfector_byWeek_byMechanism.RData")
 
 cat("Get Permutations Min Distances Weighted and corresponding UnWeighted and GeoDist\n")
-load(paste0(writingDir,"50 Permutations (Reshuffled Department)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism.RData"))
-load(paste0(writingDir,"Mean Tables/AllRuns_MinimumUnWeightedDistances_CandidateTransmitters_Permutations_byMechanism.RData"))
-load(paste0(writingDir,"Mean Tables/AllRuns_MinimumGeoDistances_CandidateTransmitters_Permutations_byMechanism.RData"))
+# load(paste0(writingDir,"50 Permutations (Reshuffled Department)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism.RData"))
+# load(paste0(writingDir,"Mean Tables/AllRuns_MinimumUnWeightedDistances_CandidateTransmitters_Permutations_byMechanism.RData"))
+# load(paste0(writingDir,"Mean Tables/AllRuns_MinimumGeoDistances_CandidateTransmitters_Permutations_byMechanism.RData"))
+load("Results/50 Permutations (Corrected)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment.RData")
 
 
 #########################
@@ -102,7 +104,7 @@ RangeTable=getRange(Week, MinimumDistances_PotentialInfector_byWeek_byMechanism,
 
 FinalTable=cbind(MeanMinimumDistancesTable, RangeTable)
 rownames(FinalTable)=c("Week1", "Week2", "Week3", "Week4", "Week5", "Week6", "Week7", "Week8")
-write.csv(FinalTable, paste0(writingDir,"50 Permutations (Reassigned Department)/FinalTable.csv"))
+write.csv(FinalTable, paste0(writingDir,"50 Permutations (Corrected)/FinalTable.csv"))
 
 # cat("Get Proportion Tables\n")
 # ProportionTables_byMechanism=get5thQuantiles(Week, MinimumDistances_PotentialInfector_byWeek_byMechanism, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment)
