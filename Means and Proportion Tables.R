@@ -11,12 +11,6 @@ source("CommonHeader.R")
 source("NetworkDistances/Can CPE episodes be explained by transfer network (Functions).R", 
        local = FALSE, verbose = getOption("verbose"))
 
-##################
-#### GET DATA ####
-
-# load("Results/CandidateTransmitters_byWeek_byMechanism.RData")
-# load("Results/50 Permutations (Reshuffled Department)/AllRuns_CandidateTransmitters_Permutations_byMechanism.RData")
-
 ###########################
 #### LOAD DEPT NETWORK ####
 
@@ -32,29 +26,24 @@ if(Transformed){
   load("../Hospital_Network/HospitalNetwork/Data/Department Network.RData")
 }
 
-cat("Load Data\n")
-load("Data/CPE Data with Mechanism Info.RData")
+####################
+#### PARAMETERS ####
 
-cat("Fix Department Variable")
-data$Department=str_pad(data$Department, 2, pad = "0")
 
-cat("Removing Episodes Occuring in Depts Other Than Depts in Network")
-data=data[which(data$Department %in% V(directed.graph_Dept)$name),]
-
-cat("Renaming Rows and Episode Numbers")
-data$Episode=1:nrow(data)
-
-########################
-#### SET PARAMETERS ####
-
-cat("Set Maximum Number of Days to Test\n")
-Week=8
+cat("Set Maximum Number of Days or Weeks to Test\n")
+Week=T
+if(Week){
+  cat("Set Maximum Number of Weeks to Test\n")
+  Week=8
+}else{
+  cat("Set Maximum Number of Days to Test\n")
+  Day=30
+}
 
 cat("Weighted or Un-Weighted Shortest Path Calculations\n")
 Weighted=T
 if(Weighted){
   cat("Set Weights and Algorithm to Calculate Weighted Shortest Paths\n")
-  load("Data/Department Network (Transformed).RData")
   weights = E(directed.graph_Dept)$weight
   algorithm = "dijkstra"
 }else{
@@ -63,8 +52,16 @@ if(Weighted){
   algorithm = "automatic"
 }
 
-cat("Runs tested\n")
-Nruns=50
+cat("Number of Simulations\n")
+Nruns=10
+
+cat("Mechanism or Class\n")
+Mechanism=T
+
+cat("Shared Department Between Incident Episodes and Candidates?\n")
+SharedDepartment=F
+
+
 
 #########################
 #### GET MEAN TABLES ####
@@ -76,13 +73,15 @@ cat("Get Min Distances Weighted and corresponding UnWeighted and GeoDist\n")
 # load("Results/MinimumDistances_PotentialInfector_byWeek_byMechanism.RData")
 # load("Results/MinimumDistances_PotentialInfector_byWeek_byMechanism_UnWeightedEquivalent.RData")
 # load("Results/MinimumDistances_PotentialInfector_byWeek_byMechanism_GeoDistEquivalent.RData")
-load("Results/50 Permutations (Corrected)/MinimumDistances_PotentialInfector_byWeek_byMechanism.RData")
+# load("Results/50 Permutations (Corrected)/MinimumDistances_PotentialInfector_byWeek_byMechanism.RData")
+load(paste0(writingDir,"NonShared Departments/MinimumDistances_byWeek_byMechanism_byNonSharedDept.RData"))
 
 cat("Get Permutations Min Distances Weighted and corresponding UnWeighted and GeoDist\n")
 # load(paste0(writingDir,"50 Permutations (Reshuffled Department)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism.RData"))
 # load(paste0(writingDir,"Mean Tables/AllRuns_MinimumUnWeightedDistances_CandidateTransmitters_Permutations_byMechanism.RData"))
 # load(paste0(writingDir,"Mean Tables/AllRuns_MinimumGeoDistances_CandidateTransmitters_Permutations_byMechanism.RData"))
-load("Results/50 Permutations (Corrected)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment.RData")
+# load("Results/50 Permutations (Corrected)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment.RData")
+load(paste0(writingDir,"NonShared Departments/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byWeek_byMechanism_byNonSharedDept.RData"))
 
 
 #########################
@@ -98,23 +97,21 @@ load("Results/50 Permutations (Corrected)/AllRuns_MinimumDistances_CandidateTran
 #                                                   AllRuns_MinimumGeoDistances_CandidateTransmitters_Permutations_byMechanism)
 
 cat("Get Mean Table\n")
-MeanMinimumDistancesTable=getMeanMinimumDistances_Simple(MinimumDistances_PotentialInfector_byWeek_byMechanism, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment)
+MeanMinimumDistancesTable=getMeanMinimumDistances_Simple(MinimumDistances_byWeek_byMechanism_byNonSharedDept, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byWeek_byMechanism_byNonSharedDept)
 cat("Get Range Table\n")
-RangeTable=getRange(Week, MinimumDistances_PotentialInfector_byWeek_byMechanism, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment)
+RangeTable=getRange(Week, MinimumDistances_byWeek_byMechanism_byNonSharedDept, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byWeek_byMechanism_byNonSharedDept)
+cat("Get Proportion Tables\n")
+ProportionTables=get5thQuantiles(Week, MinimumDistances_byWeek_byMechanism_byNonSharedDept, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byWeek_byMechanism_byNonSharedDept)
 
-FinalTable=cbind(MeanMinimumDistancesTable, RangeTable)
+cat("Merge Tables\n")
+FinalTable=cbind(MeanMinimumDistancesTable, RangeTable, ProportionTables[2,])
 rownames(FinalTable)=c("Week1", "Week2", "Week3", "Week4", "Week5", "Week6", "Week7", "Week8")
-write.csv(FinalTable, paste0(writingDir,"50 Permutations (Corrected)/FinalTable.csv"))
+names(FinalTable)=c("Means_Observed","Means_Permutations","Min_Observed",
+                    "Max_Observed","Min_Permutations", "Max_Permutations",
+                    "ProportionUnder5thPercentile")
+# write.csv(FinalTable, file = paste0(writingDir,"NonShared Departments/FinalTable.csv"))
 
-# cat("Get Proportion Tables\n")
-# ProportionTables_byMechanism=get5thQuantiles(Week, MinimumDistances_PotentialInfector_byWeek_byMechanism, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism_Reassingment)
-# 
-# cat("Merge Tables\n")
-# FinalTable=cbind(ProportionTables_byMechanism[2,], MeanMinimumDistancesTable)
-# names(FinalTable)
-# colnames(FinalTable)=c("PropMinDistUnder5thQuantPermutations",
-#                        "MinDist","UnWeightedMinDist","GeoDistMinDist",
-#                        "AvgPermMinDist","UnWeightedAvgPerm","GeoDistAvgPerm")
+
 # FinalTable=FinalTable[,c("PropMinDistUnder5thQuantPermutations",
 #                          "MinDist","AvgPermMinDist",
 #                          "UnWeightedMinDist","UnWeightedAvgPerm",

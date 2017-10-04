@@ -20,15 +20,8 @@ getCPEData=function(){
   data$DateImported <- as.Date(data$DateImported, format = "%d/%m/%Y")
   data$DateMoreFiveCases <- as.Date(data$DateMoreFiveCases, format = "%d/%m/%Y")
   
-  # cat("Select data by dates\n")
-  # cat("Choose start date\n")
-  # startDate="2015-01-01"
-  #
-  # cat("Choose end date\n")
-  # endDate="2015-06-30"
-  #
-  # cat("Get subset of data\n")
-  # data=data[which(data$DateEpisode > as.Date(startDate) & data$DateEpisode < as.Date(endDate)),]
+  cat("Select data by dates\n")
+  data=data[which(data$DateEpisode > as.Date(startDate) & data$DateEpisode < as.Date(endDate)),]
   
   ###########################################
   #### STEP 1b: MECHANISMS OF RESISTANCE ####
@@ -65,11 +58,161 @@ getCPEData=function(){
   cat("Add Multiple Mechanisms to Data\n")
   data=cbind(data, Mechanisms)
   
+  cat("Fix Department Variable")
+  data$Department=str_pad(data$Department, 2, pad = "0")
+  
+  cat("Removing Episodes Occuring in Depts Other Than Depts in Network")
+  data=data[which(data$Department %in% V(directed.graph_Dept)$name),]
+  
+  cat("Renaming Rows and Episode Numbers")
+  data$Episode=1:nrow(data)
+  rownames(data)=1:nrow(data)
+  
   return(data)
 }
 
 ##########################################################
 #### GET CANDIDATE TRANSMITTERS BY MECHANISM OR CLASS ####
+getCandidateTransmitters=function(data, Time){
+  cat("#### STEP 2: Find All Candidate Transmitters ####\n")
+  
+  if(Week){
+    cat(paste("Set Number of Preceeding Weeks Equal to", Time, "\n"))
+    Week=Time
+    
+    cat("Criterion 1: Candidate Transmitters Occured N Weeks Before Incident Episode\n")
+    if(NonPermutation){
+      CandidateTransmitters=lapply(1:nrow(data), function(i){
+        CaseDate=data[i,2]
+        CaseID=data[i,1]
+        data[data[,2] < CaseDate 
+             & data[,2] >= (CaseDate-Week*7) 
+             & data$Episode != CaseID,]})
+    }else{
+      cat("Criterion 1: Candidate Transmitters Occured N Weeks Before Incident Episode\n")
+      cat("Get Possible Candidate Transmitters for Each Incident Episode\n")
+      dataPossibleCandidates=lapply(1:nrow(data), function(i){
+        CaseDate=data[i,2]
+        CaseID=data[i,1]
+        data[data[,2] < CaseDate 
+             & data[,2] >= (CaseDate-Week*7) 
+             & data$Episode != CaseID,]})
+      if(SharedDepartment){
+        cat("For each list of possible candidates, reassign 1 out of 85 departments\n")
+        CandidateTransmitters=lapply(1:length(dataPossibleCandidates), function(i){
+          if(nrow(dataPossibleCandidates[[i]]) > 0){
+            dataPossibilities=dataPossibleCandidates[[i]]
+            columnnames=names(dataPossibilities)
+            departments=unique(data$Department)
+            dataPermutation=cbind(dataPossibilities[,c(1:13)], sample(departments, size = nrow(dataPossibilities), replace = TRUE), dataPossibilities[,c(15:21)])
+            colnames(dataPermutation)=columnnames
+            dataPermutation$Department=as.character(dataPermutation$Department)
+          }else{
+            dataPermutation=dataPossibleCandidates[[i]]
+          }
+          return(dataPermutation)
+        })
+      }else{
+        cat("For Each List of Possible Candidates, Reassign 1 out of 84 Departments Excluding Incident Department\n")
+        CandidateTransmitters=lapply(1:length(dataPossibleCandidates), function(i){
+          if(nrow(dataPossibleCandidates[[i]]) > 0){
+            dataPossibilities=dataPossibleCandidates[[i]]
+            columnnames=names(dataPossibilities)
+            departments=unique(data$Department)
+            departments=departments[!(departments == data[i, "Department"])]
+            dataPermutation=cbind(dataPossibilities[,c(1:13)], sample(departments, size = nrow(dataPossibilities), replace = TRUE), dataPossibilities[,c(15:21)])
+            colnames(dataPermutation)=columnnames
+            dataPermutation$Department=as.character(dataPermutation$Department)
+          }else{
+            dataPermutation=dataPossibleCandidates[[i]]
+          }
+          return(dataPermutation)
+        })
+      }
+    }
+  }else{
+    cat(paste("Set Number of Preceeding Days Equal to", Time, "\n"))
+    Day=Time
+    
+    if(NonPermutation){
+      cat("Criterion 1: Episode Occured N Days Before Incident Episode\n")
+      CandidateTransmitters=lapply(1:nrow(data), function(i){
+        CaseDate=data[i,2]
+        CaseID=data[i,1]
+        data[data[,2] < CaseDate 
+             & data[,2] >= (CaseDate-Day) 
+             & data$Episode != CaseID,]})
+    }else{
+      CandidateTransmitters=getPermutatedData_byDays(data, Day)
+    }
+  }
+  
+  cat("Criterion 2: Imported Episodes Do Not Have Candidate Transmitters\n")
+  ImportationStatus="Imported"
+  CandidateTransmitters_ImportationCorrection=foreach(i=1:length(CandidateTransmitters)) %do% {
+    if(data[i,ImportationStatus] == "N"){
+      CandidateTransmitters[[i]]=CandidateTransmitters[[i]]
+    }
+  }
+  
+  if(Mechanism){
+    cat("Criterion 3: Same CPE Mechanism of Resistance\n")
+    FirstResistanceMechanism="FirstMechanism"
+    CandidateTransmitters_byFirstMechanism=foreach(i=1:length(CandidateTransmitters_ImportationCorrection)) %do% {
+      CandidateTransmitters=CandidateTransmitters_ImportationCorrection[[i]]
+      CandidateTransmitters[CandidateTransmitters[,FirstResistanceMechanism] %in% data[i,FirstResistanceMechanism],]
+    }
+    SecondResistanceMechanism="SecondMechanism"
+    CandidateTransmitters_bySecondMechanism=foreach(i=1:length(CandidateTransmitters_byFirstMechanism)) %do% {
+      CandidateTransmitters=CandidateTransmitters_byFirstMechanism[[i]]
+      CandidateTransmitters[CandidateTransmitters[,SecondResistanceMechanism] %in% data[i,SecondResistanceMechanism],]
+    }
+    ThirdResistanceMechanism="ThirdMechanism"
+    CandidateTransmitters_byThirdMechanism=foreach(i=1:length(CandidateTransmitters_bySecondMechanism)) %do% {
+      CandidateTransmitters=CandidateTransmitters_bySecondMechanism[[i]]
+      CandidateTransmitters[CandidateTransmitters[,ThirdResistanceMechanism] %in% data[i,ThirdResistanceMechanism],]
+    }
+    Final_CandidateTransmitters=CandidateTransmitters_byThirdMechanism
+  }else{
+    cat("Criterion 3: Same CPE Class of Resistance\n")
+    FirstResistanceClass="FirstClass"
+    CandidateTransmitters_byFirstClass=foreach(i=1:length(CandidateTransmitters_ImportationCorrection)) %do% {
+      CandidateTransmitters=CandidateTransmitters_ImportationCorrection[[i]]
+      CandidateTransmitters[CandidateTransmitters[,FirstResistanceClass] %in% data[i,FirstResistanceClass],]
+    }
+    SecondResistanceClass="SecondClass"
+    CandidateTransmitters_bySecondClass=foreach(i=1:length(CandidateTransmitters_byFirstClass)) %do% {
+      CandidateTransmitters=CandidateTransmitters_byFirstClass[[i]]
+      CandidateTransmitters[CandidateTransmitters[,SecondResistanceClass] %in% data[i,SecondResistanceClass],]
+    }
+    ThirdResistanceClass="ThirdClass"
+    CandidateTransmitters_byThirdClass=foreach(i=1:length(CandidateTransmitters_bySecondClass)) %do% {
+      CandidateTransmitters=CandidateTransmitters_bySecondClass[[i]]
+      CandidateTransmitters[CandidateTransmitters[,ThirdResistanceClass] %in% data[i,ThirdResistanceClass],]
+    }
+    Final_CandidateTransmitters=CandidateTransmitters_byThirdClass
+  }
+  
+  if(SharedDepartment){
+    cat("Keep Candidates with Same Department as Incident Episode\n")
+    Final_CandidateTransmitters=Final_CandidateTransmitters
+  }else{
+    cat("Criterion 4: Candidates Transmitters Cannot Occur is Same Department as Incident Episode\n")
+    Final_CandidateTransmitters=foreach(j=1:length(Final_CandidateTransmitters)) %do% {
+      CandidateTransmittersSubset=Final_CandidateTransmitters[[j]]
+      if(!is.null(CandidateTransmittersSubset)){
+        if(nrow(CandidateTransmittersSubset) > 0){
+          Department="Department"
+          Final_CandidateTransmittersSubset=CandidateTransmittersSubset[!(CandidateTransmittersSubset$Department == data[j,Department]),]
+          }
+        }
+      }
+  }
+  
+  return(Final_CandidateTransmitters)
+}
+
+#Older Functions
 getCandidateTransmitters_byWeek_byMechanism=function(data, Week){
   
   ##############################################
@@ -175,7 +318,6 @@ getCandidateTransmitters_byWeek_byClass=function(data, Week){
   }
   return(CandidateTransmitters_byThirdClass)
 }
-
 getCandidateTransmitters_byWeek_byMechanism_Reassignment=function(data, Week){
   
   ##############################################
@@ -230,7 +372,6 @@ getCandidateTransmitters_byWeek_byMechanism_Reassignment=function(data, Week){
   
   return(CandidateTransmitters_byThirdMechanism)
 }
-
 getCandidateTransmitters_byDay_byMechanism_Reassignment=function(data, Day){
   
   ##############################################
@@ -288,6 +429,47 @@ getCandidateTransmitters_byDay_byMechanism_Reassignment=function(data, Day){
 
 ########################################################
 #### GET MINIMUM DISTANCE OF CANDIDATE TRANSMITTERS ####
+getMinimumDistances=function(i, CandidateTransmitters, weights, algorithm){
+  ##############################################################################################
+  #### STEP 3: Calculate Minimum (Network) Distance Between Episode and Candidate Transmitters ####
+  cat("#### STEP 3: Calculate Minimum (Network) Distance Between Episode and Candidate Transmitters ####\n")
+  
+  cat("List of Departments of Episode and Candidate Transmitters\n")
+  Department="Department"
+  CandidateTransmitters_Departments=lapply(1:length(CandidateTransmitters), function(i) {
+    CandidateTransmitters_Department=as.data.frame(as.character(CandidateTransmitters[[i]]$Department), stringsAsFactors = FALSE)
+    colnames(CandidateTransmitters_Department)=Department
+    return(CandidateTransmitters_Department)
+  })
+  cat("Distance Matrix Between Departments\n")
+  Distances_Matrix=as.data.frame(distances(directed.graph_Dept, mode="in", weights = weights, algorithm = algorithm))
+  
+  cat("Distance Between Department of Episode and Candidate Transmitters Departments\n")
+  CandidateTransmitters_Departments_MinDistances=foreach(i=1:length(CandidateTransmitters_Departments)) %do% {
+    CandidateTransmitters_Departments_Subset=CandidateTransmitters_Departments[[i]]
+    if(is.null(CandidateTransmitters_Departments_Subset)){
+      Distances=NA
+    }else{
+      if(nrow(CandidateTransmitters_Departments_Subset) > 0 ){
+        Distances=foreach(j=1:nrow(CandidateTransmitters_Departments_Subset), .combine='c') %do% {
+          Distances=Distances_Matrix[CandidateTransmitters_Departments_Subset[j,Department],data[i,Department]]
+        } 
+      }else{
+        Distances=NA
+      }
+    }
+  }
+  
+  cat("Get Minimum Distance Between Episode and 1 Potential Infector\n")
+  MinDistance=lapply(CandidateTransmitters_Departments_MinDistances, function(x) min(x))
+  
+  cat(paste("Unlist, Remove Inf, Minimum Distances", i, "\n"))
+  MinimumDistances=unlist(MinDistance)
+  
+  return(MinimumDistances)
+}
+
+#Older Functions
 getMinimumDistances_CandidateTransmitters_byWeek=function(i, CandidateTransmitters, weights, algorithm){
   ##############################################################################################
   #### STEP 3: Calculate Minimum (Network) Distance Between Episode and Candidate Transmitters ####
@@ -447,7 +629,6 @@ getMinimumUnWeightedDistances_CandidateTransmitters_byWeek=function(i, Candidate
   
   return(MinimumUnWeightedDistances)
 }
-
 getMinimumDistances_CandidateTransmitters_byDay=function(i, CandidateTransmitters, weights, algorithm){
   ##############################################################################################
   #### STEP 3: Calculate Minimum (Network) Distance Between Episode and Candidate Transmitters ####
@@ -580,7 +761,6 @@ getPermutatedData=function(data, Week){
   }
   return(dataPermutations)
 }
-
 getPermutatedData_Reassignment=function(data, Week){
   cat("Get possible candidate transmitters for each incident case/episode\n")
   dataPossibleCandidates=lapply(1:nrow(data), function(i){
@@ -604,7 +784,6 @@ getPermutatedData_Reassignment=function(data, Week){
   })
   return(dataPermutations)
 }
-
 getPermutatedData_byDays=function(data, Day){
   cat("Get possible candidate transmitters for each incident case/episode\n")
   dataPossibleCandidates=lapply(1:nrow(data), function(i){
