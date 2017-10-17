@@ -53,7 +53,7 @@ if(Weighted){
 }
 
 cat("Number of Simulations\n")
-Nruns=10
+Nruns=50
 
 cat("Mechanism or Class\n")
 Mechanism=T
@@ -97,19 +97,19 @@ load(paste0(writingDir,"NonShared Departments/AllRuns_MinimumDistances_Candidate
 #                                                   AllRuns_MinimumGeoDistances_CandidateTransmitters_Permutations_byMechanism)
 
 cat("Get Mean Table\n")
-MeanMinimumDistancesTable=getMeanMinimumDistances_Simple(MinimumDistances_byWeek_byMechanism_byNonSharedDept, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byWeek_byMechanism_byNonSharedDept)
+MeanMinimumDistancesTable=getMeanMinimumDistances_Simple(MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding)
 cat("Get Range Table\n")
-RangeTable=getRange(Week, MinimumDistances_byWeek_byMechanism_byNonSharedDept, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byWeek_byMechanism_byNonSharedDept)
+RangeTable=getRange(Day, MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding)
 cat("Get Proportion Tables\n")
-ProportionTables=get5thQuantiles(Week, MinimumDistances_byWeek_byMechanism_byNonSharedDept, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byWeek_byMechanism_byNonSharedDept)
+ProportionTables=get5thQuantiles(Day, MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding, AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding)
 
 cat("Merge Tables\n")
-FinalTable=cbind(MeanMinimumDistancesTable, RangeTable, ProportionTables[2,])
-rownames(FinalTable)=c("Week1", "Week2", "Week3", "Week4", "Week5", "Week6", "Week7", "Week8")
-names(FinalTable)=c("Means_Observed","Means_Permutations","Min_Observed",
-                    "Max_Observed","Min_Permutations", "Max_Permutations",
-                    "ProportionUnder5thPercentile")
-# write.csv(FinalTable, file = paste0(writingDir,"NonShared Departments/FinalTable.csv"))
+FinalTable=cbind(Results, MeanMinimumDistancesTable, RangeTable, ProportionTables[2,])
+# rownames(FinalTable)=c("Week1", "Week2", "Week3", "Week4", "Week5", "Week6", "Week7", "Week8")
+# names(FinalTable)=c("Means_Observed","Means_Permutations","Min_Observed",
+#                     "Max_Observed","Min_Permutations", "Max_Permutations",
+#                     "ProportionUnder5thPercentile")
+write.csv(FinalTable, file = paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2011 Data Sliding Week)/FinalTable.csv"))
 
 
 # FinalTable=FinalTable[,c("PropMinDistUnder5thQuantPermutations",
@@ -134,3 +134,160 @@ names(FinalTable)=c("Means_Observed","Means_Permutations","Min_Observed",
 # write.csv(FinalTable, paste0(writingDir,"FinalTable.csv"))
 # write.csv(FinalTable_NonZeroDistances, paste0(writingDir,"FinalTable_NonZeroDistances.csv"))
 # 
+
+
+
+##############Plots
+
+#2011
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2011 Data Sliding Week)/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2011 Data Sliding Week)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+
+#Observed Data
+MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+cat("Mean distance for every Week N for candidate transmitters\n")
+MinimumDistances_Clean=foreach(i=1:length(MinimumDistances)) %do% CleaningFunction2(MinimumDistances[[i]])
+MinimumDistances_MeansByNWeeks=foreach(i=1:length(MinimumDistances_Clean)) %do% mean(unlist(MinimumDistances_Clean[[i]]), na.rm = T)
+
+#Permutations
+AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+RandomSimulationsByWeeks=foreach(i=1:length(AllPermutatationMinimumDistances[[1]])) %do% lapply(AllPermutatationMinimumDistances, `[[`, i) #get first elements i of each list
+RandomSimulationsByWeeks_Means=lapply(AllPermutatationMinimumDistances, function(x) {unlist(lapply(x, function(y) {mean(unlist(y), na.rm=T)}))}) 
+
+#Plot
+par(mfrow=c(3,2))
+plot(unlist(MinimumDistances_MeansByNWeeks), type='l', col="red", ylim=c(3.4,7.2), 
+     ylab="Avg. Shortest Dist. All Ep.", 
+     xlab="1st Day of 1-Week Sliding Window",
+     main="2011 CPE Episodes (n=108) & 50 Permutations")
+for(i in 1:length(RandomSimulationsByWeeks)){
+  lines(unlist(RandomSimulationsByWeeks_Means[[i]]), col=rgb(0, 0, 1, 0.4))
+}
+grid(nx = 15, ny = 5, col = "gray")
+
+#2012
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2012 Data Sliding Week)/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2012 Data Sliding Week)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+
+#Observed Data
+MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+cat("Mean distance for every Week N for candidate transmitters\n")
+MinimumDistances_Clean=foreach(i=1:length(MinimumDistances)) %do% CleaningFunction2(MinimumDistances[[i]])
+MinimumDistances_MeansByNWeeks=foreach(i=1:length(MinimumDistances_Clean)) %do% mean(unlist(MinimumDistances_Clean[[i]]), na.rm = T)
+
+#Permutations
+AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+RandomSimulationsByWeeks=foreach(i=1:length(AllPermutatationMinimumDistances[[1]])) %do% lapply(AllPermutatationMinimumDistances, `[[`, i) #get first elements i of each list
+RandomSimulationsByWeeks_Means=lapply(AllPermutatationMinimumDistances, function(x) {unlist(lapply(x, function(y) {mean(unlist(y), na.rm=T)}))}) 
+
+#Plot
+plot(unlist(MinimumDistances_MeansByNWeeks), type='l', col="red", ylim=c(3, 4.5), 
+     ylab="Avg. Shortest Dist. All Ep.", 
+     xlab="1st Day of 1-Week Sliding Window",
+     main="2012 CPE Episodes (n=240) & 50 Permutations")
+for(i in 1:length(RandomSimulationsByWeeks)){
+  lines(unlist(RandomSimulationsByWeeks_Means[[i]]), col=rgb(0, 0, 1, 0.4))
+}
+grid(nx = 15, ny = 5, col = "gray")
+
+#2013
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2013 Data Sliding Week)/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2013 Data Sliding Week)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+
+#Observed Data
+MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+cat("Mean distance for every Week N for candidate transmitters\n")
+MinimumDistances_Clean=foreach(i=1:length(MinimumDistances)) %do% CleaningFunction2(MinimumDistances[[i]])
+MinimumDistances_MeansByNWeeks=foreach(i=1:length(MinimumDistances_Clean)) %do% mean(unlist(MinimumDistances_Clean[[i]]), na.rm = T)
+
+#Permutations
+AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+RandomSimulationsByWeeks=foreach(i=1:length(AllPermutatationMinimumDistances[[1]])) %do% lapply(AllPermutatationMinimumDistances, `[[`, i) #get first elements i of each list
+RandomSimulationsByWeeks_Means=lapply(AllPermutatationMinimumDistances, function(x) {unlist(lapply(x, function(y) {mean(unlist(y), na.rm=T)}))}) 
+
+#Plot
+# par(mfrow=c(2,2))
+plot(unlist(MinimumDistances_MeansByNWeeks), type='l', col="red", ylim=c(2.8, 3.85), 
+     ylab="Avg. Shortest Dist. All Ep.", 
+     xlab="1st Day of 1-Week Sliding Window",
+     main="2013 CPE Episodes (n=401) & 50 Permutations")
+for(i in 1:length(RandomSimulationsByWeeks)){
+  lines(unlist(RandomSimulationsByWeeks_Means[[i]]), col=rgb(0, 0, 1, 0.4))
+}
+grid(nx = 15, ny = 5, col = "gray")
+
+#2014
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014 Data Sliding Week)/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014 Data Sliding Week)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+
+#Observed Data
+MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+cat("Mean distance for every Week N for candidate transmitters\n")
+MinimumDistances_Clean=foreach(i=1:length(MinimumDistances)) %do% CleaningFunction2(MinimumDistances[[i]])
+MinimumDistances_MeansByNWeeks=foreach(i=1:length(MinimumDistances_Clean)) %do% mean(unlist(MinimumDistances_Clean[[i]]), na.rm = T)
+
+#Permutations
+AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+RandomSimulationsByWeeks=foreach(i=1:length(AllPermutatationMinimumDistances[[1]])) %do% lapply(AllPermutatationMinimumDistances, `[[`, i) #get first elements i of each list
+RandomSimulationsByWeeks_Means=lapply(AllPermutatationMinimumDistances, function(x) {unlist(lapply(x, function(y) {mean(unlist(y), na.rm=T)}))}) 
+
+#Plot
+# par(mfrow=c(2,1))
+plot(unlist(MinimumDistances_MeansByNWeeks), type='l', col="red", ylim=c(3, 3.85), 
+     ylab="Avg. Shortest Dist. All Ep.", 
+     xlab="1st Day of 1-Week Sliding Window",
+     main="2014 CPE Episodes (n=668) & 50 Permutations")
+for(i in 1:length(RandomSimulationsByWeeks)){
+  lines(unlist(RandomSimulationsByWeeks_Means[[i]]), col=rgb(0, 0, 1, 0.4))
+}
+grid(nx = 15, ny = 5, col = "gray")
+
+#2015
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2015 Data Sliding Week)/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2015 Data Sliding Week)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+
+#Observed Data
+MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+cat("Mean distance for every Week N for candidate transmitters\n")
+MinimumDistances_Clean=foreach(i=1:length(MinimumDistances)) %do% CleaningFunction2(MinimumDistances[[i]])
+MinimumDistances_MeansByNWeeks=foreach(i=1:length(MinimumDistances_Clean)) %do% mean(unlist(MinimumDistances_Clean[[i]]), na.rm = T)
+
+#Permutations
+AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+RandomSimulationsByWeeks=foreach(i=1:length(AllPermutatationMinimumDistances[[1]])) %do% lapply(AllPermutatationMinimumDistances, `[[`, i) #get first elements i of each list
+RandomSimulationsByWeeks_Means=lapply(AllPermutatationMinimumDistances, function(x) {unlist(lapply(x, function(y) {mean(unlist(y), na.rm=T)}))}) 
+
+#Plot
+plot(unlist(MinimumDistances_MeansByNWeeks), type='l', col="red", ylim=c(2.3, 3.2), 
+     ylab="Avg. Shortest Dist. All Ep.", 
+     xlab="1st Day of 1-Week Sliding Window",
+     main="2015 CPE Episodes (n=948) & 50 Permutations")
+for(i in 1:length(RandomSimulationsByWeeks)){
+  lines(unlist(RandomSimulationsByWeeks_Means[[i]]), col=rgb(0, 0, 1, 0.4))
+}
+grid(nx = 15, ny = 5, col = "gray")
+
+#2016
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2016 Data Sliding Week)/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2016 Data Sliding Week)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+
+#Observed Data
+MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+cat("Mean distance for every Week N for candidate transmitters\n")
+MinimumDistances_Clean=foreach(i=1:length(MinimumDistances)) %do% CleaningFunction2(MinimumDistances[[i]])
+MinimumDistances_MeansByNWeeks=foreach(i=1:length(MinimumDistances_Clean)) %do% mean(unlist(MinimumDistances_Clean[[i]]), na.rm = T)
+
+#Permutations
+AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+RandomSimulationsByWeeks=foreach(i=1:length(AllPermutatationMinimumDistances[[1]])) %do% lapply(AllPermutatationMinimumDistances, `[[`, i) #get first elements i of each list
+RandomSimulationsByWeeks_Means=lapply(AllPermutatationMinimumDistances, function(x) {unlist(lapply(x, function(y) {mean(unlist(y), na.rm=T)}))}) 
+
+#Plot
+plot(unlist(MinimumDistances_MeansByNWeeks), type='l', col="red", ylim=c(2.8, 3.8), 
+     ylab="Avg. Shortest Dist. All Ep.", 
+     xlab="1st Day of 1-Week Sliding Window",
+     main="2016 CPE Episodes (n=378) & 50 Permutations")
+for(i in 1:length(RandomSimulationsByWeeks)){
+  lines(unlist(RandomSimulationsByWeeks_Means[[i]]), col=rgb(0, 0, 1, 0.4))
+}
+grid(nx = 15, ny = 5, col = "gray")

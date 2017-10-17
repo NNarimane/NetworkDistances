@@ -194,3 +194,40 @@ if(Department){
   
 }
 
+####################################################
+#### Analysis of Dept Network & CPE Departments ####
+
+source("CommonHeader.R")
+
+source("NetworkDistances/Can CPE episodes be explained by transfer network (Functions).R", 
+       local = FALSE, verbose = getOption("verbose"))
+
+#Get CPE Data
+cat("Choose start date\n")
+startDate="2003-01-01"
+cat("Choose end date\n")
+endDate="2016-12-30"
+cat("Get CPE Data with Mechanism and Class Info\n")
+data=getCPEData()
+
+#Get Network with Transformations
+cat("Upload Department Network with Transformed Weights\n")
+load("Data/Department Network (Transformed).RData")
+
+#Get Distance Matrix
+cat("Distance Matrix Between Departments\n")
+Distances_Matrix=as.data.frame(distances(directed.graph_Dept, mode="in", weights = weights, algorithm = algorithm))
+
+#Table of CPE Departments
+CPEDepartments1=table(data$Department)
+CPEDepartments2=prop.table(table(data$Department))
+CPEDepartments=cbind(CPEDepartments1, CPEDepartments2)
+
+#Edgelist Department Network
+library("reshape2")
+DistancesTable=melt(as.matrix(Distances_Matrix))
+colnames(DistancesTable)=c("From","To","Weight")
+
+
+
+

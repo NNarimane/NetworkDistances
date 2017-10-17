@@ -82,68 +82,210 @@ getCandidateTransmitters=function(data, Time){
     
     cat("Criterion 1: Candidate Transmitters Occured N Weeks Before Incident Episode\n")
     if(NonPermutation){
+      cat("For Observed Data\n")
       CandidateTransmitters=lapply(1:nrow(data), function(i){
-        CaseDate=data[i,2]
-        CaseID=data[i,1]
-        data[data[,2] < CaseDate 
-             & data[,2] >= (CaseDate-Week*7) 
-             & data$Episode != CaseID,]})
-    }else{
-      cat("Criterion 1: Candidate Transmitters Occured N Weeks Before Incident Episode\n")
-      cat("Get Possible Candidate Transmitters for Each Incident Episode\n")
-      dataPossibleCandidates=lapply(1:nrow(data), function(i){
         CaseDate=data[i,2]
         CaseID=data[i,1]
         data[data[,2] < CaseDate 
              & data[,2] >= (CaseDate-Week*7) 
              & data$Episode != CaseID,]})
       if(SharedDepartment){
-        cat("For each list of possible candidates, reassign 1 out of 85 departments\n")
-        CandidateTransmitters=lapply(1:length(dataPossibleCandidates), function(i){
-          if(nrow(dataPossibleCandidates[[i]]) > 0){
-            dataPossibilities=dataPossibleCandidates[[i]]
-            columnnames=names(dataPossibilities)
-            departments=unique(data$Department)
-            dataPermutation=cbind(dataPossibilities[,c(1:13)], sample(departments, size = nrow(dataPossibilities), replace = TRUE), dataPossibilities[,c(15:21)])
-            colnames(dataPermutation)=columnnames
-            dataPermutation$Department=as.character(dataPermutation$Department)
-          }else{
-            dataPermutation=dataPossibleCandidates[[i]]
-          }
-          return(dataPermutation)
-        })
+        cat("Keep Candidates with Same Department as Incident Episode\n")
+        CandidateTransmitters=CandidateTransmitters
       }else{
-        cat("For Each List of Possible Candidates, Reassign 1 out of 84 Departments Excluding Incident Department\n")
-        CandidateTransmitters=lapply(1:length(dataPossibleCandidates), function(i){
-          if(nrow(dataPossibleCandidates[[i]]) > 0){
-            dataPossibilities=dataPossibleCandidates[[i]]
-            columnnames=names(dataPossibilities)
-            departments=unique(data$Department)
-            departments=departments[!(departments == data[i, "Department"])]
-            dataPermutation=cbind(dataPossibilities[,c(1:13)], sample(departments, size = nrow(dataPossibilities), replace = TRUE), dataPossibilities[,c(15:21)])
-            colnames(dataPermutation)=columnnames
-            dataPermutation$Department=as.character(dataPermutation$Department)
-          }else{
-            dataPermutation=dataPossibleCandidates[[i]]
+        cat("Candidates Transmitters Cannot Occur is Same Department as Incident Episode\n")
+        CandidateTransmitters=foreach(j=1:length(CandidateTransmitters)) %do% {
+          CandidateTransmittersSubset=CandidateTransmitters[[j]]
+          if(!is.null(CandidateTransmittersSubset)){
+            if(nrow(CandidateTransmittersSubset) > 0){
+              Department="Department"
+              Final_CandidateTransmittersSubset=CandidateTransmittersSubset[!(CandidateTransmittersSubset$Department == data[j,Department]),]
+            }
           }
-          return(dataPermutation)
-        })
+        }
+      }
+    }else{
+      cat("For Permutated Data\n")
+      dataPossibleCandidates=lapply(1:nrow(data), function(i){
+        CaseDate=data[i,2]
+        CaseID=data[i,1]
+        data[data[,2] < CaseDate 
+             & data[,2] >= (CaseDate-Week*7) 
+             & data$Episode != CaseID,]})
+      if(Reshuffled){
+        if(SharedDepartment){
+          cat("For each list of possible candidates, reassign 1 out of 85 departments\n")
+          CandidateTransmitters=lapply(1:length(dataPossibleCandidates), function(i){
+            if(nrow(dataPossibleCandidates[[i]]) > 0){
+              dataPossibilities=dataPossibleCandidates[[i]]
+              columnorder=names(dataPossibilities)
+              dataPermutation=cbind(dataPossibilities[,c(1:13,16:21)], dataPossibilities[sample(1:nrow(dataPossibilities)),c(14:15)])
+              dataPermutation=dataPermutation[,columnorder]
+              dataPermutation$Department=as.character(dataPermutation$Department)
+            }else{
+              dataPermutation=dataPossibleCandidates[[i]]
+            }
+            return(dataPermutation)
+          })
+        }else{
+          cat("For Each List of Possible Candidates, Reassign 1 out of 84 Departments Excluding Incident Department\n")
+          CandidateTransmitters=lapply(1:length(dataPossibleCandidates), function(i){
+            if(nrow(dataPossibleCandidates[[i]]) > 0){
+              dataPossibilities=dataPossibleCandidates[[i]]
+              columnorder=names(dataPossibilities)
+              dataPermutation=cbind(dataPossibilities[,c(1:13,16:21)], dataPossibilities[sample(1:nrow(dataPossibilities)),c(14:15)])
+              dataPermutation=dataPermutation[,columnorder]
+              dataPermutation$Department=as.character(dataPermutation$Department)
+              dataPermutation=dataPermutation[!(dataPermutation$Department == data[i, "Department"]),]
+            }else{
+              dataPermutation=dataPossibleCandidates[[i]]
+            }
+            return(dataPermutation)
+          })
+        }
+      }else{
+        if(SharedDepartment){
+          cat("For each list of possible candidates, reassign 1 out of 85 departments\n")
+          CandidateTransmitters=lapply(1:length(dataPossibleCandidates), function(i){
+            if(nrow(dataPossibleCandidates[[i]]) > 0){
+              dataPossibilities=dataPossibleCandidates[[i]]
+              columnnames=names(dataPossibilities)
+              departments=unique(data$Department)
+              dataPermutation=cbind(dataPossibilities[,c(1:13)], sample(departments, size = nrow(dataPossibilities), replace = TRUE), dataPossibilities[,c(15:21)])
+              colnames(dataPermutation)=columnnames
+              dataPermutation$Department=as.character(dataPermutation$Department)
+            }else{
+              dataPermutation=dataPossibleCandidates[[i]]
+            }
+            return(dataPermutation)
+          })
+        }else{
+          cat("For Each List of Possible Candidates, Reassign 1 out of 84 Departments Excluding Incident Department\n")
+          CandidateTransmitters=lapply(1:length(dataPossibleCandidates), function(i){
+            if(nrow(dataPossibleCandidates[[i]]) > 0){
+              dataPossibilities=dataPossibleCandidates[[i]]
+              columnnames=names(dataPossibilities)
+              departments=unique(data$Department)
+              departments=departments[!(departments == data[i, "Department"])]
+              dataPermutation=cbind(dataPossibilities[,c(1:13)], sample(departments, size = nrow(dataPossibilities), replace = TRUE), dataPossibilities[,c(15:21)])
+              colnames(dataPermutation)=columnnames
+              dataPermutation$Department=as.character(dataPermutation$Department)
+            }else{
+              dataPermutation=dataPossibleCandidates[[i]]
+            }
+            return(dataPermutation)
+          })
+        }
       }
     }
   }else{
     cat(paste("Set Number of Preceeding Days Equal to", Time, "\n"))
     Day=Time
     
+    cat("Criterion 1: Candidate Transmitters Occured N Sliding Days Before Incident Episode\n")
     if(NonPermutation){
-      cat("Criterion 1: Episode Occured N Days Before Incident Episode\n")
-      CandidateTransmitters=lapply(1:nrow(data), function(i){
-        CaseDate=data[i,2]
-        CaseID=data[i,1]
-        data[data[,2] < CaseDate 
-             & data[,2] >= (CaseDate-Day) 
-             & data$Episode != CaseID,]})
+      cat("For Observed Data\n")
+      if(Sliding){
+        cat(paste("Sliding", WeekSlide, "Week by", Day,"Day\n"))
+        CandidateTransmitters=lapply(1:nrow(data), function(i){
+          CaseDate=data[i,2]
+          CaseID=data[i,1]
+          data[data[,2] <= (CaseDate-Day) 
+               & data[,2] > (CaseDate-WeekSlide*7-Day) 
+               & data$Episode != CaseID,]})
+      }else{
+        cat(paste("For Non-Sliding Day", Day, "\n"))
+        CandidateTransmitters=lapply(1:nrow(data), function(i){
+          CaseDate=data[i,2]
+          CaseID=data[i,1]
+          data[data[,2] < CaseDate 
+               & data[,2] >= (CaseDate-Day) 
+               & data$Episode != CaseID,]})
+      }
     }else{
-      CandidateTransmitters=getPermutatedData_byDays(data, Day)
+      cat("For Permutated Data\n")
+      if(Sliding){
+        cat(paste("Sliding", WeekSlide, "Week by", Day,"\n"))
+        dataPossibleCandidates=lapply(1:nrow(data), function(i){
+          CaseDate=data[i,2]
+          CaseID=data[i,1]
+          data[data[,2] <= (CaseDate-Day) 
+               & data[,2] > (CaseDate-WeekSlide*7-Day) 
+               & data$Episode != CaseID,]})
+      }else{
+        cat(paste("For Non-Sliding Day", Day, "\n"))
+        dataPossibleCandidates=lapply(1:nrow(data), function(i){
+          CaseDate=data[i,2]
+          CaseID=data[i,1]
+          data[data[,2] < CaseDate 
+               & data[,2] >= (CaseDate-Day) 
+               & data$Episode != CaseID,]})
+      }
+      if(Reshuffled){
+        if(SharedDepartment){
+          cat("For each list of possible candidates, reassign 1 out of 85 departments\n")
+          CandidateTransmitters=lapply(1:length(dataPossibleCandidates), function(i){
+            if(nrow(dataPossibleCandidates[[i]]) > 0){
+              dataPossibilities=dataPossibleCandidates[[i]]
+              columnorder=names(dataPossibilities)
+              dataPermutation=cbind(dataPossibilities[,c(1:13,16:21)], dataPossibilities[sample(1:nrow(dataPossibilities)),c(14:15)])
+              dataPermutation=dataPermutation[,columnorder]
+              dataPermutation$Department=as.character(dataPermutation$Department)
+            }else{
+              dataPermutation=dataPossibleCandidates[[i]]
+            }
+            return(dataPermutation)
+          })
+        }else{
+          cat("For Each List of Possible Candidates, Reassign 1 out of 84 Departments Excluding Incident Department\n")
+          CandidateTransmitters=lapply(1:length(dataPossibleCandidates), function(i){
+            if(nrow(dataPossibleCandidates[[i]]) > 0){
+              dataPossibilities=dataPossibleCandidates[[i]]
+              columnorder=names(dataPossibilities)
+              dataPermutation=cbind(dataPossibilities[,c(1:13,16:21)], dataPossibilities[sample(1:nrow(dataPossibilities)),c(14:15)])
+              dataPermutation=dataPermutation[,columnorder]
+              dataPermutation$Department=as.character(dataPermutation$Department)
+              dataPermutation=dataPermutation[!(dataPermutation$Department == data[i, "Department"]),]
+            }else{
+              dataPermutation=dataPossibleCandidates[[i]]
+            }
+            return(dataPermutation)
+          })
+        }
+      }else{
+        if(SharedDepartment){
+          cat("For each list of possible candidates, reassign 1 out of 85 departments\n")
+          CandidateTransmitters=lapply(1:length(dataPossibleCandidates), function(i){
+            if(nrow(dataPossibleCandidates[[i]]) > 0){
+              dataPossibilities=dataPossibleCandidates[[i]]
+              columnnames=names(dataPossibilities)
+              departments=unique(data$Department)
+              dataPermutation=cbind(dataPossibilities[,c(1:13)], sample(departments, size = nrow(dataPossibilities), replace = TRUE), dataPossibilities[,c(15:21)])
+              colnames(dataPermutation)=columnnames
+              dataPermutation$Department=as.character(dataPermutation$Department)
+            }else{
+              dataPermutation=dataPossibleCandidates[[i]]
+            }
+            return(dataPermutation)
+          })
+        }else{
+          cat("For Each List of Possible Candidates, Reassign 1 out of 84 Departments Excluding Incident Department\n")
+          CandidateTransmitters=lapply(1:length(dataPossibleCandidates), function(i){
+            if(nrow(dataPossibleCandidates[[i]]) > 0){
+              dataPossibilities=dataPossibleCandidates[[i]]
+              columnnames=names(dataPossibilities)
+              departments=unique(data$Department)
+              departments=departments[!(departments == data[i, "Department"])]
+              dataPermutation=cbind(dataPossibilities[,c(1:13)], sample(departments, size = nrow(dataPossibilities), replace = TRUE), dataPossibilities[,c(15:21)])
+              colnames(dataPermutation)=columnnames
+              dataPermutation$Department=as.character(dataPermutation$Department)
+            }else{
+              dataPermutation=dataPossibleCandidates[[i]]
+            }
+            return(dataPermutation)
+          })
+        }
+      }
     }
   }
   
@@ -191,22 +333,6 @@ getCandidateTransmitters=function(data, Time){
       CandidateTransmitters[CandidateTransmitters[,ThirdResistanceClass] %in% data[i,ThirdResistanceClass],]
     }
     Final_CandidateTransmitters=CandidateTransmitters_byThirdClass
-  }
-  
-  if(SharedDepartment){
-    cat("Keep Candidates with Same Department as Incident Episode\n")
-    Final_CandidateTransmitters=Final_CandidateTransmitters
-  }else{
-    cat("Criterion 4: Candidates Transmitters Cannot Occur is Same Department as Incident Episode\n")
-    Final_CandidateTransmitters=foreach(j=1:length(Final_CandidateTransmitters)) %do% {
-      CandidateTransmittersSubset=Final_CandidateTransmitters[[j]]
-      if(!is.null(CandidateTransmittersSubset)){
-        if(nrow(CandidateTransmittersSubset) > 0){
-          Department="Department"
-          Final_CandidateTransmittersSubset=CandidateTransmittersSubset[!(CandidateTransmittersSubset$Department == data[j,Department]),]
-          }
-        }
-      }
   }
   
   return(Final_CandidateTransmitters)
@@ -746,13 +872,11 @@ getPermutatedData=function(data, Week){
     data[data[,2] < CaseDate 
          & data[,2] >= (CaseDate-Week*7) 
          & data$Episode != CaseID,]})
-  # cat("For each list of possible candidates, shuffle rows for Imported Status and Mechanism of Resistance and keep dates and Department un-shuffled\n")
   cat("For each list of possible candidates, shuffle rows for Departments\n")
   dataPermutations=foreach(i=1:length(dataPossibleCandidates)) %do% {
     if(nrow(dataPossibleCandidates[[i]]) > 0){
       dataPossibilities=dataPossibleCandidates[[i]]
       columnorder=names(dataPossibilities)
-      # dataPermutation=cbind(dataPossibilities[,c(1:3,6:7,9,14:15)], dataPossibilities[sample(1:nrow(dataPossibilities)),c(4:5,8,10:13,16:21)])
       dataPermutation=cbind(dataPossibilities[,c(1:13,16:21)], dataPossibilities[sample(1:nrow(dataPossibilities)),c(14:15)])
       dataPermutation=dataPermutation[,columnorder]
     }else{

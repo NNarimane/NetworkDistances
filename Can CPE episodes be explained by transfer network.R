@@ -30,13 +30,16 @@ if(Transformed){
 
 
 cat("Set Maximum Number of Days or Weeks to Test\n")
-Week=T
+Week=F
 if(Week){
   cat("Set Maximum Number of Weeks to Test\n")
   Week=8
 }else{
   cat("Set Maximum Number of Days to Test\n")
   Day=30
+  cat("Sliding Week(s) by Days\n")
+  Sliding=T
+  WeekSlide=1
 }
 
 cat("Weighted or Un-Weighted Shortest Path Calculations\n")
@@ -52,23 +55,26 @@ if(Weighted){
 }
 
 cat("Number of Simulations\n")
-Nruns=10
+Nruns=50
 
 cat("Mechanism or Class\n")
 Mechanism=T
 
 cat("Shared Department Between Incident Episodes and Candidates?\n")
-SharedDepartment=F
+SharedDepartment=T
+
+cat("Reshuffled or Reassigned Departments?\n")
+Reshuffled=T
 
 
 ##########################
 #### STEP 1: CPE DATA ####
 
 cat("Choose start date\n")
-startDate="2003-01-01"
+startDate="2014-01-01"
 
 cat("Choose end date\n")
-endDate="2016-12-30"
+endDate="2015-12-30"
 
 cat("Get CPE Data with Mechanism and Class Info\n")
 data=getCPEData()
@@ -82,68 +88,90 @@ data=getCPEData()
 ############################################
 #### STEP 2: GET CANDIDATE TRANSMITTERS ####
 
-# NonPermutation=T
-# CandidateTransmitters_byWeek_byMechanism_byNonSharedDept=foreach(i=1:Week) %do% getCandidateTransmitters(data=data, i)
-# MinimumDistances_byWeek_byMechanism_byNonSharedDept=foreach(i=1:Week) %do% getMinimumDistances(i, CandidateTransmitters_byWeek_byMechanism_byNonSharedDept[[i]], weights = weights, algorithm = algorithm)
-# save(CandidateTransmitters_byWeek_byMechanism_byNonSharedDept, file = paste0(writingDir,"NonShared Departments/CandidateTransmitters_byWeek_byMechanism_byNonSharedDept.RData"))
-# save(MinimumDistances_byWeek_byMechanism_byNonSharedDept, file = paste0(writingDir,"NonShared Departments/MinimumDistances_byWeek_byMechanism_byNonSharedDept.RData"))
-load(paste0(writingDir,"NonShared Departments/CandidateTransmitters_byWeek_byMechanism_byNonSharedDept.RData"))
-load(paste0(writingDir,"NonShared Departments/MinimumDistances_byWeek_byMechanism_byNonSharedDept.RData"))
+NonPermutation=T
+CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding=foreach(i=1:Day) %do% getCandidateTransmitters(data=data, i)
+MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding=foreach(i=1:Day) %do% getMinimumDistances(i, CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding[[i]], weights = weights, algorithm = algorithm)
+
+save(CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding, file = paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014-2015 Data Sliding Week)/CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+save(MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding, file = paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014-2015 Data Sliding Week)/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014-2015 Data Sliding Week)/CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014-2015 Data Sliding Week)/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 
 ############################################
 
-# cat("Numer of cores to use\n")
-# cores=5
+cat("Numer of cores to use\n")
+cores=5
+
+cat("Make clusters for parallel\n")
+cl=makeCluster(cores)
+registerDoSNOW(cl)
+getDoParWorkers()
+
+cat("RUN PARALLEL\n")
+AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding <- foreach(icount(Nruns), .packages=c('igraph', 'foreach')) %dopar% {
+  NonPermutation=F
+  Week=F
+  cat("Get  Random Candidate Transmitters from Permutations\n")
+  CandidateTransmitters_Permutations=foreach(j=1:Day) %do% getCandidateTransmitters(data=data, j)
+}
+
+cat("Stop parallel\n")
+stopCluster(cl)
+print("Cluster stopped")
+registerDoSEQ()
+
+# save(AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding, file=paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014-2015 Data Sliding Week)/AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+# load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014-2015 Data Sliding Week)/AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 # 
-# cat("Make clusters for parallel\n")
-# cl=makeCluster(cores)
-# registerDoSNOW(cl)
-# getDoParWorkers()
+# AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P1=AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding[1:15]
+# AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P2=AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding[16:30]
+# AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P3=AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding[31:40]
+# AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P4=AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding[41:50]
 # 
-# cat("RUN PARALLEL\n")
-# AllRuns_CandidateTransmitters_Permutations_byWeek_byMechanism_byNonSharedDept <- foreach(icount(Nruns), .packages=c('igraph', 'foreach')) %dopar% {
-#   NonPermutation=F
-#   cat("Get Weekly Random Candidate Transmitters from Permutations\n")
-#   CandidateTransmitters_Permutations_byWeek=foreach(j=1:Week) %do% getCandidateTransmitters(data=data, j)
-# }
+# rm(AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P4)
 # 
-# cat("Stop parallel\n")
-# stopCluster(cl)
-# print("Cluster stopped")
-# registerDoSEQ()
-# 
-# save(AllRuns_CandidateTransmitters_Permutations_byWeek_byMechanism_byNonSharedDept, file=paste0(writingDir,"NonShared Departments/AllRuns_CandidateTransmitters_Permutations_byWeek_byMechanism_byNonSharedDept.RData"))
-load(paste0(writingDir,"NonShared Departments/AllRuns_CandidateTransmitters_Permutations_byWeek_byMechanism_byNonSharedDept.RData"))
+# save(AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P1, file=paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014-2015 Data Sliding Week)/AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P1.RData"))
+# save(AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P2, file=paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014-2015 Data Sliding Week)/AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P2.RData"))
+# save(AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P3, file=paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014-2015 Data Sliding Week)/AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P3.RData"))
+# save(AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P4, file=paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014-2015 Data Sliding Week)/AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P4.RData"))
+
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014-2015 Data Sliding Week)/AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P1.RData"))
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014-2015 Data Sliding Week)/AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P2.RData"))
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014-2015 Data Sliding Week)/AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P3.RData"))
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014-2015 Data Sliding Week)/AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P4.RData"))
 
 ############################################
 
 #Parallel
-# cat("Numer of cores to use\n")
-# cores=5
-# 
-# cat("Runs to test\n")
-# Nruns=Nruns
-# 
-# cat("Make clusters for parallel\n")
-# cl=makeCluster(cores)
-# registerDoSNOW(cl)
-# getDoParWorkers()
-# 
-# AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byWeek_byMechanism_byNonSharedDept=foreach(run=1:Nruns, .packages=c('igraph', 'foreach')) %dopar% {
-#   cat("Get Minimum Distance (Between Potential Infector and Case) for Permutations\n")
-#   OneRun_CandidateTransmitters_Permutations=AllRuns_CandidateTransmitters_Permutations_byWeek_byMechanism_byNonSharedDept[[run]]
-#   MinimumDistances_CandidateTransmitters_Permutations=foreach(j=1:Week) %do% getMinimumDistances(j, OneRun_CandidateTransmitters_Permutations[[j]], weights = weights, algorithm = algorithm)
-# }
-# 
-# cat("Stop parallel\n")
-# stopCluster(cl)
-# print("Cluster stopped")
-# registerDoSEQ()
-# 
-# save(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byWeek_byMechanism_byNonSharedDept, file=paste0(writingDir,"NonShared Departments/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byWeek_byMechanism_byNonSharedDept.RData"))
-load(paste0(writingDir,"NonShared Departments/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byWeek_byMechanism_byNonSharedDept.RData"))
+cat("Numer of cores to use\n")
+cores=4
 
-############################################
+cat("Runs to test\n")
+# Nruns=Nruns
+Nruns=length(AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P1)
+
+cat("Make clusters for parallel\n")
+cl=makeCluster(cores)
+registerDoSNOW(cl)
+getDoParWorkers()
+
+AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P1=foreach(run=1:Nruns, .packages=c('igraph', 'foreach')) %dopar% {
+  cat("Get Minimum Distance (Between Potential Infector and Case) for Permutations\n")
+  OneRun_CandidateTransmitters_Permutations=AllRuns_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P1[[run]]
+  MinimumDistances_CandidateTransmitters_Permutations=foreach(j=1:Day) %do% getMinimumDistances(j, OneRun_CandidateTransmitters_Permutations[[j]], weights = weights, algorithm = algorithm)
+}
+
+cat("Stop parallel\n")
+stopCluster(cl)
+print("Cluster stopped")
+registerDoSEQ()
+
+save(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P1, file=paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014-2015 Data Sliding Week)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding_P1.RData"))
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014-2015 Data Sliding Week)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+
+
+###########################################
 
 # if(Week){
 #   cat(paste("Get Candidate Transmitters for Week 1 to", Week, "by Mechanism\n"))
@@ -342,24 +370,25 @@ load(paste0(writingDir,"NonShared Departments/AllRuns_MinimumDistances_Candidate
 
 cat("Get Average of Minimum Distance (Between Potential Infector and Case)\n")
 # Average_MinimumDistances_CandidateTransmitters_Permutations_byMechanism=getAverageMinDistances_CandidateTransmitters_Permutations_byWeek(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byMechanism)
-Average_MinimumDistances_CandidateTransmitters_Permutations_byMechanism=getAverageMinDistances_CandidateTransmitters_Permutations_byWeek(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byWeek_byMechanism_byNonSharedDept)
+Average_MinimumDistances_CandidateTransmitters_Permutations_byMechanism=getAverageMinDistances_CandidateTransmitters_Permutations_byWeek(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding)
 
 
 #########################################
 #### WILCOXON PAIRED RANKED SUM TEST ####
 
 cat("Wilcoxon Rank Sum Test\n")
-CombinedMinimumDistances_WilcoxonPairedRankTestPValues=foreach(i=1:Week) %do% getWilcoxonPairedRankTestPValues(i, MinimumDistances_byWeek_byMechanism_byNonSharedDept, Average_MinimumDistances_CandidateTransmitters_Permutations_byMechanism)
+CombinedMinimumDistances_WilcoxonPairedRankTestPValues=foreach(i=1:Day) %do% getWilcoxonPairedRankTestPValues(i, MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding, Average_MinimumDistances_CandidateTransmitters_Permutations_byMechanism)
 
 cat("Create Table of Statistically Significant and Non-Sig Results\n")
 WilcoxonPairedRankTestPValues=unlist(CombinedMinimumDistances_WilcoxonPairedRankTestPValues)
 Results=as.data.frame(WilcoxonPairedRankTestPValues)
-Results$Week=1:Week
+Results$LowerBoundDay=1:Day
+Results$UpperBound=7+1:Day
 Results$StatSigDiff=Results$WilcoxonPairedRankTestPValues < 0.05
 #If stat. sig. p-value results (TRUE), reject H0 (meaning that the distributions differ)
 
-# cat("Save Results\n")
-# write.csv(Results, file=paste0(writingDir,"NonShared Departments/Wilcoxon Rank Sum Test Results for Week 1 to ", Week," for ", Nruns," Permutations.csv"), row.names = F)
+cat("Save Results\n")
+write.csv(Results, file=paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014-2015 Data Sliding Week)/Wilcoxon Rank Sum Test Results for Day 1 to ", Day," for Sliding Week ", Nruns," Permutations.csv"), row.names = F)
 
 #######################################
 #### INTERPRETATION OF THE RESULTS ####
