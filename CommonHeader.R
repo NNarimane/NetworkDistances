@@ -26,6 +26,8 @@ library("gridExtra")
 library("grid")
 library("visNetwork")
 library("ndtv")
+library("RColorBrewer")
+library("dplyr")
 
 #########################
 #### SET ENVIRONMENT ####
