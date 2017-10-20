@@ -19,6 +19,13 @@ library("snow")
 library("foreach")
 library("splitstackshape")
 library("geosphere")
+library("Rmisc")
+library("ggplot2")
+library("reshape2")
+library("gridExtra")
+library("grid")
+library("visNetwork")
+library("ndtv")
 
 #########################
 #### SET ENVIRONMENT ####

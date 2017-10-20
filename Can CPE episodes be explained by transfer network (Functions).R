@@ -58,13 +58,13 @@ getCPEData=function(){
   cat("Add Multiple Mechanisms to Data\n")
   data=cbind(data, Mechanisms)
   
-  cat("Fix Department Variable")
+  cat("Fix Department Variable\n")
   data$Department=str_pad(data$Department, 2, pad = "0")
   
-  cat("Removing Episodes Occuring in Depts Other Than Depts in Network")
+  cat("Removing Episodes Occuring in Depts Other Than Depts in Network\n")
   data=data[which(data$Department %in% V(directed.graph_Dept)$name),]
   
-  cat("Renaming Rows and Episode Numbers")
+  cat("Renaming Rows and Episode Numbers\n")
   data$Episode=1:nrow(data)
   rownames(data)=1:nrow(data)
   
@@ -967,7 +967,7 @@ CleaningFunction=function(x){
 
 ##################################################################################
 #### GET AVERAGE MINIMUM DISTANCE OF CANDIDATE TRANSMITTERS FROM PERMUTATIONS ####
-getAverageMinDistances_CandidateTransmitters_Permutations_byWeek=function(MinimumDistances_PotentialInfector_Permutation){
+getAverageMinDistances_CandidateTransmitters_Permutations=function(MinimumDistances_PotentialInfector_Permutation){
   cat(paste("Average", Week, "runs\n"))
   CandidateTransmitters_Permutations_byWeek=foreach(i=1:length(MinimumDistances_PotentialInfector_Permutation[[1]])) %do% lapply(MinimumDistances_PotentialInfector_Permutation, `[[`, i) #get first elements i of each list
   
