@@ -28,11 +28,14 @@ if(Transformed){
 ###################
 #### LOAD DATA ####
 
+cat("Choose year to analyze\n")
+Year="2015"
+
 cat("Choose start date\n")
-startDate="2015-01-01"
+startDate=paste0(Year, "-01-01")
 
 cat("Choose end date\n")
-endDate="2015-12-30"
+endDate=paste0(Year, "-12-30")
 
 cat("Get CPE Data with Mechanism and Class Info\n")
 data=getCPEData()
@@ -40,115 +43,34 @@ data=getCPEData()
 #########################
 #### LOAD CANDIDATES ####
 
-load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2015 Data Sliding Week)/CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2015 Data Sliding Week)/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+cat(paste("Load", Year, "Candidates\n"))
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department ", Year, " Data Sliding Week)/CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+
+cat(paste("Load", Year, "Minimum Distances\n"))
+load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department ", Year, " Data Sliding Week)/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 
 #######################
-#### SELECT WINDOW ####
+#### GET ALL PAIRS ####
 
-cat("Get lowest observed minimum distance and window")
-MinimumDistances_Clean=foreach(i=1:length(MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding)) %do% CleaningFunction2(MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding[[i]])
-MinimumDistances_MeansByNWindow=foreach(i=1:length(MinimumDistances_Clean)) %do% mean(unlist(MinimumDistances_Clean[[i]]), na.rm = T)
-
-min(unlist(MinimumDistances_MeansByNWindow))
-Window=which.min(MinimumDistances_MeansByNWindow)
-
-cat("From plots, window between Day X and Day Y showed biggest difference")
-Day=Window
-
-cat(paste("Subset Candidates from Day =", Day))
-CandidateTransmitters=CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding[[Day]]
-# MinDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding[[Day]]
-
-##################################
-#### GET POTENTIAL CANDIDATES ####
-
-cat("Calculate Minimum (Network) Distance Between Episode and Candidate Transmitters\n")
-
-cat("List of Departments of Episode and Candidate Transmitters\n")
-Department="Department"
-CandidateTransmitters_Departments=lapply(1:length(CandidateTransmitters), function(i) {
-  CandidateTransmitters_Department=as.data.frame(as.character(CandidateTransmitters[[i]]$Department), stringsAsFactors = FALSE)
-  colnames(CandidateTransmitters_Department)=Department
-  return(CandidateTransmitters_Department)
-})
-
-cat("Set Parameters\n")
-weights = E(directed.graph_Dept)$weight
-algorithm = "dijkstra"
-cat("Distance Matrix Between Departments\n")
-Distances_Matrix=as.data.frame(distances(directed.graph_Dept, mode="in", weights = weights, algorithm = algorithm))
-
-cat("Distance Between Department of Episode and Candidate Transmitters Departments\n")
-CandidateTransmitters_Departments_MinDistances=foreach(i=1:length(CandidateTransmitters_Departments)) %do% {
-  CandidateTransmitters_Departments_Subset=CandidateTransmitters_Departments[[i]]
-    if(nrow(CandidateTransmitters_Departments_Subset) > 0 ){
-      Distances=foreach(j=1:nrow(CandidateTransmitters_Departments_Subset), .combine='c') %do% {
-        Distances=Distances_Matrix[CandidateTransmitters_Departments_Subset[j,Department],data[i,Department]]
-      } 
-    }else{
-      Distances=NA
-    }
+AllPairs=foreach(i=1:length(MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding)) %do% {
+  getPairsByWindow(i, MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding, CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding)
 }
-
-cat("Locate Potential Infector\n")
-MinDistanceLocation=lapply(CandidateTransmitters_Departments_MinDistances, function(x) which.min(x))
-
-cat("Get Info of Potential Infector\n")
-PotentialCandidates=foreach(i=1:length(CandidateTransmitters)) %do% {
-  if(!is.na(CandidateTransmitters_Departments_MinDistances[[i]])){
-    CandidateTransmitters_Subset=CandidateTransmitters[[i]]
-    MinDistanceLocation_Subset=MinDistanceLocation[[i]]
-    PotentialCandidate=CandidateTransmitters_Subset[MinDistanceLocation_Subset,]
-  }
-}
-
-###################
-#### GET PAIRS ####
-
-#ALL
-Episode="Episode"
-Pairs_Episodes=foreach(i=1:length(PotentialCandidates), .combine = 'rbind') %do% {
-  if(is.null(PotentialCandidates[[i]])){
-    None=c(NA, NA)
-  }else{
-    Pairs_Episode=c(PotentialCandidates[[i]]$Episode, data[i,Episode])}
-}
-
-Pairs_Episodes=Pairs_Episodes[complete.cases(Pairs_Episodes),]
-Pairs_Episodes=Pairs_Episodes[order(Pairs_Episodes[,1]),]
-Pairs_Episodes=cbind(as.character(Pairs_Episodes[,1]), as.character(Pairs_Episodes[,2]))
-
-#Imported as Source
-Pairs_Episodes_Imported=foreach(i=1:length(PotentialCandidates), .combine = 'rbind') %do% {
-  if(is.null(PotentialCandidates[[i]])){
-    None=c(NA, NA)
-  }else{
-    require(plyr)
-    PotentialCandidates_Imported=llply(PotentialCandidates, function(x) subset(x, x$Imported == "O"))
-    data_Imported=data[which(data$Imported == "O"),]
-    Pairs_Episode=c(PotentialCandidates_Imported[[i]]$Episode, data_Imported[i,Episode])}
-}
-
-Pairs_Episodes_Imported=Pairs_Episodes_Imported[complete.cases(Pairs_Episodes_Imported),]
-Pairs_Episodes_Imported=Pairs_Episodes_Imported[order(Pairs_Episodes_Imported[,1]),]
-Pairs_Episodes_Imported=cbind(as.character(Pairs_Episodes_Imported[,1]), as.character(Pairs_Episodes_Imported[,2]))
 
 ##############################
 #### Description of Pairs ####
 
-#Get Distances
+cat("Get distances between pairs\n")
 PairsDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding[[Window]]
 NonNAPairsDistances=PairsDistances[complete.cases(PairsDistances)]
 
-#Get Table of Pairs and Distances
+cat("Get Table of Pairs and Distances\n")
 PairsDistanceTable=as.data.frame(cbind(Pairs_Episodes, NonNAPairsDistances))
-#Number of different sources
+cat("Number of different sources\n")
 length(levels(PairsDistanceTable$V1))
-#Number of different targets
+cat("Number of different targets\n")
 length(levels(PairsDistanceTable$V2))
 
-#Add info to table
+cat("Add info to table\n")
 PairsDistanceTable$V1=as.character(PairsDistanceTable$V1)
 PairsDistanceTable$V2=as.character(PairsDistanceTable$V2)
 PairsDistanceTable$NonNAPairsDistances=as.numeric(as.character(PairsDistanceTable$NonNAPairsDistances))
@@ -159,120 +81,139 @@ PairsDistanceTable$Mechanism=foreach(i=1:nrow(PairsDistanceTable), .combine = 'c
 colnames(PairsDistanceTable)=c("Source","Target","ShortestPathDistance","SourceImported","SourceDepartment","TargetDepartment","Mechanism")
 PairsDistanceTable=PairsDistanceTable[,c("Source","SourceImported","SourceDepartment","ShortestPathDistance","TargetDepartment","Target","Mechanism")]
 
-#Save
-write.csv(PairsDistanceTable, file=paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2015 Data Sliding Week)/PairsDistanceInfoTable.csv"))
-load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2015 Data Sliding Week)/PairsDistanceInfoTable.csv"))
+cat("Save or load\n")
+# write.csv(PairsDistanceTable, file=paste0(writingDir,"50 Permutations (Reshuffled Shared Department ", Year, " Data Sliding Week)/PairsDistanceInfoTable.csv"))
+# load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department ", Year, " Data Sliding Week)/PairsDistanceInfoTable.csv"))
 
 ##########################
 #### Summary of Pairs ####
 
-#Average Length Between Pairs
+
+cat("Average Length Between Pairs\n")
 Mean=mean(NonNAPairsDistances)
-#Range
+cat("Range\n")
 Min=min(NonNAPairsDistances)
 NonZeroMin=min(NonNAPairsDistances[NonNAPairsDistances > 0])
 Max=max(NonNAPairsDistances)
-#CI
+cat("CI\n")
 Upper_CI=Mean + 1.96*sd(NonNAPairsDistances)/sqrt(length(NonNAPairsDistances))
 Lower_CI=Mean - 1.96*sd(NonNAPairsDistances)/sqrt(length(NonNAPairsDistances))
 
-#Total episodes linked out of total episodes
+cat("Total episodes linked out of total episodes\n")
 TotalLinked=nrow(Pairs_Episodes)/nrow(data)
-#How many episodes are explained
-prop.table(table(unlist(lapply(PotentialCandidates, is.null))))
+cat("How many episodes are explained\n")
+prop.table(table(unlist(lapply(PotentialInfectors, is.null))))
 
-#Total imported episodes linked out of total imported episodes
+cat("Total imported episodes linked out of total imported episodes\n")
 TotalLinkedImported=nrow(Pairs_Episodes_Imported)/nrow(data_Imported)
 
-#Total non-imported episodes linked out of total non-imported episodes
+cat("Total non-imported episodes linked out of total non-imported episodes\n")
 NonImportedEpisodes=data$Episode[which(data$Imported == "N")]
 NonImportedEpisodesWithSource=NonImportedEpisodes[NonImportedEpisodes %in% Pairs_Episodes[,2]]
 TotalLinkedNonImported=length(NonImportedEpisodesWithSource)/length(NonImportedEpisodes)
 
-#SummaryTable
+cat("Summary Table\n")
 SummaryTable=as.data.frame(rbind(nrow(data), nrow(data_Imported), length(NonImportedEpisodes), length(NonNAPairsDistances), Mean, Min, NonZeroMin, Max, Upper_CI, Lower_CI, TotalLinked,
                    TotalLinkedImported, TotalLinkedNonImported))
-rownames(SummaryTable)=c("All 2015 Episodes","All 2015 Imported Episodes","All 2015 Non-Imported Episodes","Number of Pairs","Mean Distance","Min","NonZeroMin","Max","Upper_CI","Lower_CI","% Episodes Linked Out of Total",
+rownames(SummaryTable)=c(paste("All", Year, "Episodes"), paste("All", Year, "Imported Episodes"),"All 2015 Non-Imported Episodes","Number of Pairs","Mean Distance","Min","NonZeroMin","Max","Upper_CI","Lower_CI","% Episodes Linked Out of Total",
                          "% Imported Episodes as Source","% Non-Imported Episodes as Targets")
-colnames(SummaryTable)=c("2015 Pairs at Day 21-28")
+colnames(SummaryTable)=paste(Year, "Pairs at Day 21-28")
 
-#Save
-write.csv(SummaryTable, file=paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2015 Data Sliding Week)/SummaryTable.csv"))
-load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2015 Data Sliding Week)/SummaryTable.csv"))
+cat("Save or load\n")
+# write.csv(SummaryTable, file=paste0(writingDir,"50 Permutations (Reshuffled Shared Department ", Year, " Data Sliding Week)/SummaryTable.csv"))
+# load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department ", Year, " Data Sliding Week)/SummaryTable.csv"))
 
 
 ###################
 #### GET GRAPH ####
 
+cat("Get Graph of Pairs\n")
 TreeGraph=graph_from_edgelist(Pairs_Episodes, directed = T)
-# plot(TreeGraph, layout=layout_as_tree(TreeGraph, mode="out"), vertex.size=2, vertex.label.cex=0.5)
-#
-# layout=layout.reingold.tilford(TreeGraph, circular=T)
-# layout=layout.fruchterman.reingold(TreeGraph)
-# plot(TreeGraph, layout=layout, vertex.size=7, vertex.label.cex=0.5)
 
-
-#Add attributes
+cat("Get order of names\n")
 names=V(TreeGraph)$name
 names_int=as.integer(names)
 
-DataSubset=data[data$Episode %in% names_int, c("DateEpisode","Episode", "Mechanism", "Department")]
+cat("Get info for each node\n")
+DataSubset=data[data$Episode %in% names_int, c("DateEpisode","Episode", "Mechanism", "Department", "TotalCases", "Imported")]
+cat("Number of episodes per department per year\n")
+DeptTable=as.data.frame(table(data$Department))
+DataSubset=merge(DataSubset, DeptTable, by.x="Department", by.y="Var1", all.x=T)
 DataSubset=DataSubset[match(names_int, DataSubset$Episode),]
 
+cat("Add attributes\n")
 V(TreeGraph)$Mechanism=DataSubset$Mechanism
 V(TreeGraph)$Department=DataSubset$Department
+V(TreeGraph)$Cases=DataSubset$TotalCases
+V(TreeGraph)$Imported=DataSubset$Imported
+V(TreeGraph)$YearlyNumberEpisodes=DataSubset$Freq
 
-write.graph(TreeGraph, file=paste0(writingDir,"2015 CPE Shortest Distance Pairs Tree (with Attributes) Day 21-28.gml"), format="gml")
+cat("Save\n")
+# write.graph(TreeGraph, file=paste0(writingDir, Year, " CPE Shortest Distance Pairs Tree (with Attributes3) Day 21-28.gml"), format="gml")
 
-#Decompose network into components
+cat("Decompose network into components\n")
 DecomposedNetwork <- decompose.graph(TreeGraph)
-save(DecomposedNetwork, file=paste0(writingDir,"2015 CPE Shortest Distance Pairs Decomposed Trees (with Attributes) Day 21-28.RData"))
+cat("Save\n")
+# save(DecomposedNetwork, file=paste0(writingDir, Year, " CPE Shortest Distance Pairs Decomposed Trees (with Attributes) Day 21-28.RData"))
 
+cat("Find position of largest component\n")
+MaxLocation=which.max(sapply(DecomposedNetwork, vcount))
+LargestComponent=DecomposedNetwork[[MaxLocation]]
 
 ####################
 #### visNETWORK ####
 
+cat("VizNetwork Function\n")
 getNetwork=function(DecomposedNetwork, subgraph){
   Network <- toVisNetworkData(DecomposedNetwork[[subgraph]])
   
   nodes <- Network$nodes
-  nodes$group=nodes$Mechanism 
+  nodes$group=nodes$Imported 
   edges <- Network$edges
   
-  MechanismFactor=as.factor(nodes$Mechanism)
-  MechanismColors=c(palette(rainbow(8)))[MechanismFactor]
+  ImportedFactor=as.factor(nodes$group)
+  Colors=c(palette(rainbow(2)))[ImportedFactor]
   
-  newMechanism=gsub(" ", "", nodes$Mechanism, fixed = TRUE)
-  nodes$group=newMechanism
+  # newMechanism=gsub(" ", "", nodes$Mechanism, fixed = TRUE)
+  # nodes$group=newMechanism
   
   nodes$label=nodes$Department
-  nodes$value=20
+  # nodes$value=nodes$Cases
+  nodes$value=nodes$YearlyNumberEpisodes/10
   nodes$shadow=TRUE
   
   edges$smooth=F
   
-  Plot=visNetwork(nodes, edges, width = "100%", font.size =10, shape='circle') %>%
-    visHierarchicalLayout(sortMethod="directed") %>%
-    visEdges(arrows = 'to') 
+  Plot=visNetwork(nodes, edges, width = "100%", font.size=100, shape='circle') %>%
+    visHierarchicalLayout(sortMethod="directed", direction = "LR") %>%
+    visEdges(arrows = 'to') %>% visLegend(main="Imported", width = 0.1)
   
   return(Plot)
 }
 
-Plot=getNetwork(DecomposedNetwork, 2)
+cat("Plot VizNetwork\n")
+Plot=getNetwork(DecomposedNetwork, MaxLocation)
 Plot
 
 ##########################
 #### Temporal Network ####
 
-#Get episode dates
+cat("Get episode dates\n")
 DataSubset$Days=DataSubset$DateEpisode-DataSubset$DateEpisode[1]
-DynamicEdgeList=as.data.frame(Pairs_Episodes)
 
-#Merge databases
-SourceInfo=merge(DynamicEdgeList, DataSubset, by.x="V1", by.y="Episode")
+cat("Temporal Network for All Episodes or Largest Components\n")
+Tree=T
+if(Tree){
+  DynamicEdgeList=as.data.frame(Pairs_Episodes)
+}else{
+  DynamicEdgeList=as.data.frame(get.edgelist(LargestComponent))
+}
+
+cat("Merge databases\n")
+SourceInfo=merge(DynamicEdgeList, DataSubset, by.x="V1", by.y="Episode", all.x=T)
 SourceInfo_TargetInfo=merge(SourceInfo, DataSubset, by.x="V2", by.y="Episode")
 
-#Select Departments and Days
+cat("Select departments and days\n")
 FinalDeptTempNetEdgeList=SourceInfo_TargetInfo[,c("Department.x","Department.y","Days.x","Days.y")]
 FinalDeptTempNetEdgeList$Days.y=FinalDeptTempNetEdgeList$Days.y-min(FinalDeptTempNetEdgeList$Days.y)
 FinalDeptTempNetEdgeList=FinalDeptTempNetEdgeList[order(FinalDeptTempNetEdgeList$Days.y),]
@@ -280,73 +221,93 @@ rownames(FinalDeptTempNetEdgeList)=1:nrow(FinalDeptTempNetEdgeList)
 # colnames(FinalDeptTempNetEdgeList)=c("id1", "id2", "time")
 # colnames(FinalDeptTempNetEdgeList)=c("Source", "Target", "time")
 
-# write.csv(FinalDeptTempNetEdgeList, file=paste0(writingDir,"2015 Temporal Edgelist.csv"))
+cat("Save Edgelist\n")
+# write.csv(FinalDeptTempNetEdgeList, file=paste0(writingDir,Year, " Temporal Edgelist.csv"))
 
-#Convert to graph
+cat("Get Table of Departments \n")
+SourceDeptTable=table(FinalDeptTempNetEdgeList$Department.x)
+SourceDeptTable
+max(SourceDeptTable) #for all depts, 130 sources come from Paris (75), 61 (13), 46 (94), 35 (69), 31 (92)
+TargetDeptTable=table(FinalDeptTempNetEdgeList$Department.y)
+TargetDeptTable
+max(TargetDeptTable) #for all depts, 44 targets from (13), 35 (75), 30 (94), 29 (92), 28 (59), 25 (91), 22 (69)
+
+# cat("Plot Graph of Departments \n")
+# par(mfrow=c(2,1), mai=c(0.5,1,0.5,0.5))
+# plot(prop.table(SourceDeptTable), cex.axis=0.5, cex=0.8, 
+#      ylab="Prop. as Source Depts", 
+#      main=paste(Year, "CPE 21-28 Days Pairs (n=464)"),
+#      xaxs="i", yaxs="i", ylim=c(0,0.25))
+# grid(col = "lightgray")
+# plot(prop.table(TargetDeptTable), cex.axis=0.5, cex=0.8, 
+#      ylab="Prop. as Target Depts",
+#      xaxs="i", yaxs="i", ylim=c(0,0.25))
+# grid(col = "lightgray")
+
+cat("Convert dynamic edgelist to graph\n")
 edgelist=as.matrix(FinalDeptTempNetEdgeList[,1:2])
 TempGraph=graph_from_edgelist(edgelist, directed = T)
 
-#Add time to edges
+cat("Add time to edges\n")
 E(TempGraph)$Time=FinalDeptTempNetEdgeList$Days.y
 
-#Add geocoding
+cat("Add geocoding of departments\n")
 GeoCodes=read.csv(file="C:/Users/Narimane/Dropbox/Network Distances and CPE Episodes/Data/All Dept Prefecture GeoCodes.csv")
 GeoCodes$Number=str_pad(GeoCodes$Number, 2, pad = "0")
 GeoCodes$Number[20]="20"
 
-cat("Select latitude and longitude of network hospitals\n")
+cat("Select latitude and longitude of network departments\n")
 LatLongInfo=GeoCodes[which(GeoCodes$Number %in% V(TempGraph)$name), c("Number","Latitude", "Longitude")]
 LatLongInfo=LatLongInfo[match(V(TempGraph)$name, LatLongInfo$Number),]
 
+cat("Add latitude and longitude attributes\n")
 V(TempGraph)$lat=LatLongInfo$Latitude
 V(TempGraph)$lon=LatLongInfo$Longitude
 
-write.graph(TempGraph, file=paste0(writingDir,"TempGraph.gml"), format="gml")
+cat("Add number of yearly episodes, imported episodes, and non-imported episodes as node attributes\n")
+DeptTable_AllEpisodes=as.data.frame(table(data$Department))
+DeptTable_ImportedEpisodes=as.data.frame(table(data$Department[which(data$Imported == "O")]))
+DeptTable_NonImportedEpisodes=as.data.frame(table(data$Department[which(data$Imported == "N")]))
 
+#All
+DeptSizes_AllEpisodes=DeptTable_AllEpisodes[which(DeptTable_AllEpisodes$Var1 %in% V(TempGraph)$name),]
+DeptSizes_AllEpisodes=DeptSizes_AllEpisodes[match(V(TempGraph)$name, DeptSizes_AllEpisodes$Var1),]
+DeptSizes_AllEpisodes$Var1=V(TempGraph)$name
+DeptSizes_AllEpisodes[is.na(DeptSizes_AllEpisodes)]=0
+V(TempGraph)$SizeAllEpisodes=DeptSizes_AllEpisodes$Freq
 
-#######
+#Imported
+DeptSizes_ImportedEpisodes=DeptTable_ImportedEpisodes[which(DeptTable_ImportedEpisodes$Var1 %in% V(TempGraph)$name),]
+DeptSizes_ImportedEpisodes=DeptSizes_ImportedEpisodes[match(V(TempGraph)$name, DeptSizes_ImportedEpisodes$Var1),]
+DeptSizes_ImportedEpisodes$Var1=V(TempGraph)$name
+DeptSizes_ImportedEpisodes[is.na(DeptSizes_ImportedEpisodes)]=0
+V(TempGraph)$SizeImportedEpisodes=DeptSizes_ImportedEpisodes$Freq
 
+#NonImported
+DeptSizes_NonImportedEpisodes=DeptTable_NonImportedEpisodes[which(DeptTable_NonImportedEpisodes$Var1 %in% V(TempGraph)$name),]
+DeptSizes_NonImportedEpisodes=DeptSizes_NonImportedEpisodes[match(V(TempGraph)$name, DeptSizes_NonImportedEpisodes$Var1),]
+DeptSizes_NonImportedEpisodes$Var1=V(TempGraph)$name
+DeptSizes_NonImportedEpisodes[is.na(DeptSizes_NonImportedEpisodes)]=0
+V(TempGraph)$SizeNonImportedEpisodes=DeptSizes_NonImportedEpisodes$Freq
 
-# #load the edges with time stamp
-# #there are three columns in edges: id1,id2,time
-# edges <- FinalDeptTempNetEdgeList[1:20,]
-# 
-# #generate the full graph
-# g <- graph.data.frame(edges,directed=F)
-# 
-# #generate a cool palette for the graph (darker colors = older nodes)
-# YlOrBr.pal <- colorRampPalette(brewer.pal(8,"YlOrRd"))
-# #colors for the nodes are chosen from the very beginning
-# V(g)$color <- rev(YlOrBr.pal(vcount(g)))[as.numeric(V(g)$name)]
-# 
-# #time in the edges goes from 1 to 338. We kick off at time 0
-# ti=0
-# #remove edges which are not present
-# gt <- delete_edges(g, which(E(g)$time > ti))
-# 
-# 
-# #generate first layout using graphopt with normalized coordinates. This places the initially connected set of nodes in the middle. If you use fruchterman.reingold it will place that initial set in the outer ring.
-# layout.old <- norm_coords(layout.graphopt(gt), xmin = -1, xmax = 1, ymin = -1, ymax = 1)
-# 
-# #total time of the dynamics
-# total_time <- max(E(g)$time)
-# #This is the time interval for the animation. In this case is taken to be 1/10
-# #of the time (i.e. 10 snapshots) between adding two consecutive nodes
-# dt <- 0.1
-# #Output for each frame will be a png with HD size 1600x900 <img draggable="false" class="emoji" alt="🙂" src="https://s.w.org/images/core/emoji/2.3/svg/1f642.svg">
-# png(file=paste0(writingDir,"example%03d.png.png"), width=1600, height=900)
-# #Time loop starts
-# for(time in seq(0, total_time,dt)){
-#   #remove edges which are not present
-#   gt <- delete_edges(g,which(E(g)$time > time))
-#   #with the new graph, we update the layout a little bit
-#   layout.new <- layout_with_fr(gt,coords=layout.old,niter=10,start.temp=0.05,grid="nogrid")
-#   #plot the new graph
-#   plot(gt,layout=layout.new,vertex.label="",vertex.frame.color=V(g)$color,edge.width=1.5,asp=9/16,margin=-0.15)
-#   #use the new layout in the next round
-#   layout.old <- layout.new
-# }
-# dev.off()
-# 
-# 
-# 
+cat("Add node color attributes\n")
+# DeptColors=as.data.frame(cbind(Dept=V(directed.graph_Dept)$name, Colors=colorRampPalette(brewer.pal(11, "Spectral"))(93)), stringsAsFactors = F)
+# save(DeptColors, file="C:/Users/Narimane/Dropbox/Network Distances and CPE Episodes/Data/DeptColors.RData")
+load(file="C:/Users/Narimane/Dropbox/Network Distances and CPE Episodes/Data/DeptColors.RData")
+DeptColorsSubset=DeptColors[which(DeptColors$Dept %in% V(TempGraph)$name),]
+DeptColorsSubset=DeptColorsSubset[match(V(TempGraph)$name, DeptColorsSubset$Dept),]
+V(TempGraph)$Color=DeptColorsSubset$Colors
+
+cat("Save temporal graph\n")
+write.graph(TempGraph, file=paste0(writingDir,Year, " TempGraph With Sizes and Color.gml"), format="gml")
+
+##############
+# Dept Network
+
+cat("Upload number of hospitals by department\n")
+load(file="C:/Users/Narimane/Dropbox/Network Distances and CPE Episodes/Data/Hospital Depts.RData")
+
+cat("Table of hospitals per department\n")
+hospdeptstable=as.data.frame(table(hospital_depts))
+hospdeptstable$Percent=hospdeptstable$Freq/sum(hospdeptstable$Freq)
+

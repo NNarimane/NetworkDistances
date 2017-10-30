@@ -74,12 +74,19 @@ getYearlyPlots=function(MinimumDistances, AllPermutatationMinimumDistances, titl
   
   FinalPlot=ggplot(data=mdf, aes(x=Window, y=AvgMinDistance, group = Run)) +
       geom_line(aes(colour = "Permutations"), alpha=0.5) +
-      stat_summary(aes(y = AvgMinDistance, group=1, fill="Permutations 95% CI"),
-                   fun.data = mean_cl_normal,
+      # stat_summary(aes(y = AvgMinDistance, group=1, fill="Permutations 95% CI"),
+      #              fun.data = mean_cl_normal,
+      #              geom = "ribbon", group=1,
+      #              fun.args = list(conf.int = 0.95),
+      #              alpha=0.3) +
+      stat_summary(aes(y = AvgMinDistance, group=1, fill="95% of Permutations"),
+                   fun.ymin = function(z) { quantile(z,0.025) },
+                   fun.ymax = function(z) { quantile(z,0.975) },
+                   fun.y = median,
                    geom = "ribbon", group=1,
-                   fun.args = list(conf.int = 0.95),
                    alpha=0.3) +
-      scale_fill_manual(name="", values="gray10") +
+    
+      scale_fill_manual(name="", values="dodgerblue1") +
       stat_summary(aes(y = AvgMinDistance, group=1, colour="Permutations Mean"), fun.y=mean, geom="line",group=1) +
       geom_line(data=ObservedDistances, aes(x=Window, y=AvgMinDistance, colour="Observed")) +
       scale_colour_manual(name="", values=c("red", "grey", "black")) +

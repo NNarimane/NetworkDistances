@@ -182,7 +182,7 @@ getCandidateTransmitters=function(data, Time){
     cat(paste("Set Number of Preceeding Days Equal to", Time, "\n"))
     Day=Time
     
-    cat("Criterion 1: Candidate Transmitters Occured N Sliding Days Before Incident Episode\n")
+    cat("Criterion 1: Candidate Transmitters Occured N Days Before Incident Episode\n")
     if(NonPermutation){
       cat("For Observed Data\n")
       if(Sliding){
@@ -1237,6 +1237,107 @@ getMeanMinimumDistances_Simple=function(MinimumDistances, AllPermutatationMinimu
   return(MinDistancesTableByMeanPerNWeeks)
 }
 
+
+###############################
+##### GET PAIRS BY WINDOW #####
+
+getPairsByWindow=function(Window, AllMinimumDistances, AllCandidateTransmitters){
+ 
+  cat("#### SELECT WINDOW ####\n")
+  
+  cat("Get lowest observed minimum distance\n")
+  MinimumDistances_Clean=foreach(i=1:length(AllMinimumDistances)) %do% CleaningFunction2(AllMinimumDistances[[i]])
+  MinimumDistances_MeansByNWindow=foreach(i=1:length(MinimumDistances_Clean)) %do% mean(unlist(MinimumDistances_Clean[[i]]), na.rm = T)
+  
+  # cat("Identify window which has the lowest minimum distance")
+  # min(unlist(MinimumDistances_MeansByNWindow))
+  # Window=which.min(MinimumDistances_MeansByNWindow)
+  
+  cat(paste("Subset Candidates from Day =", Window, "to Day", Window+7))
+  CandidateTransmitters=AllCandidateTransmitters[[Window]]
+  # MinDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding[[Window]]
+  
+  cat("#### GET POTENTIAL CANDIDATES ####\n")
+  
+  cat("List of Departments of Episode and Candidate Transmitters\n")
+  Department="Department"
+  CandidateTransmitters_Departments=lapply(1:length(CandidateTransmitters), function(i) {
+    CandidateTransmitters_Department=as.data.frame(as.character(CandidateTransmitters[[i]]$Department), stringsAsFactors = FALSE)
+    colnames(CandidateTransmitters_Department)=Department
+    return(CandidateTransmitters_Department)
+  })
+  
+  cat("Set Parameters\n")
+  weights = E(directed.graph_Dept)$weight
+  algorithm = "dijkstra"
+  cat("Distance Matrix Between Departments\n")
+  Distances_Matrix=as.data.frame(distances(directed.graph_Dept, mode="in", weights = weights, algorithm = algorithm))
+  
+  cat("Distance Between Department of Episode and Candidate Transmitters Departments\n")
+  CandidateTransmitters_Departments_MinDistances=foreach(i=1:length(CandidateTransmitters_Departments)) %do% {
+    CandidateTransmitters_Departments_Subset=CandidateTransmitters_Departments[[i]]
+    if(nrow(CandidateTransmitters_Departments_Subset) > 0 ){
+      Distances=foreach(j=1:nrow(CandidateTransmitters_Departments_Subset), .combine='c') %do% {
+        Distances=Distances_Matrix[CandidateTransmitters_Departments_Subset[j,Department],data[i,Department]]
+      } 
+    }else{
+      Distances=NA
+    }
+  }
+  
+  cat("Locate Potential Infector\n")
+  MinDistanceLocation=lapply(CandidateTransmitters_Departments_MinDistances, function(x) which.min(x))
+  
+  cat("Get Info of Potential Infector\n")
+  PotentialInfectors=foreach(i=1:length(CandidateTransmitters)) %do% {
+    if(!is.na(CandidateTransmitters_Departments_MinDistances[[i]])){
+      CandidateTransmitters_Subset=CandidateTransmitters[[i]]
+      MinDistanceLocation_Subset=MinDistanceLocation[[i]]
+      PotentialCandidate=CandidateTransmitters_Subset[MinDistanceLocation_Subset,]
+    }
+  }
+  
+  # cat("Save or load\n")
+  # save(PotentialInfectors, file=paste0(writingDir, "50 Permutations (Reshuffled Shared Department ", Year, " Data Sliding Week)/PotentialInfectors.RData"))
+  # load(paste0(writingDir, "50 Permutations (Reshuffled Shared Department ", Year, " Data Sliding Week)/PotentialInfectors.RData"))
+  
+  cat("#### GET PAIRS ####\n")
+  
+  cat("Get all pairs of incident episodes and potential infectors by episode number\n")
+  Episode="Episode"
+  Pairs_Episodes=foreach(i=1:length(PotentialInfectors), .combine = 'rbind') %do% {
+    if(is.null(PotentialInfectors[[i]])){
+      None=c(NA, NA)
+    }else{
+      Pairs_Episode=c(PotentialInfectors[[i]]$Episode, data[i,Episode])}
+  }
+  
+  cat("Remove NAs and bind\n")
+  Pairs_Episodes=Pairs_Episodes[complete.cases(Pairs_Episodes),]
+  Pairs_Episodes=Pairs_Episodes[order(Pairs_Episodes[,1]),]
+  Pairs_Episodes=cbind(as.character(Pairs_Episodes[,1]), as.character(Pairs_Episodes[,2]))
+  
+  cat("Get all pairs of imported incident episodes and potential infectors by episode number\n")
+  Pairs_Episodes_Imported=foreach(i=1:length(PotentialInfectors), .combine = 'rbind') %do% {
+    if(is.null(PotentialInfectors[[i]])){
+      None=c(NA, NA)
+    }else{
+      require(plyr)
+      PotentialInfectors_Imported=llply(PotentialInfectors, function(x) subset(x, x$Imported == "O"))
+      data_Imported=data[which(data$Imported == "O"),]
+      Pairs_Episode=c(PotentialInfectors_Imported[[i]]$Episode, data_Imported[i,Episode])}
+  }
+  
+  cat("Remove NAs and bind\n")
+  Pairs_Episodes_Imported=Pairs_Episodes_Imported[complete.cases(Pairs_Episodes_Imported),]
+  Pairs_Episodes_Imported=Pairs_Episodes_Imported[order(Pairs_Episodes_Imported[,1]),]
+  Pairs_Episodes_Imported=cbind(as.character(Pairs_Episodes_Imported[,1]), as.character(Pairs_Episodes_Imported[,2]))
+  
+  cat("Combine Both Pairs to List\n")
+  BothPairs=list(Pairs_Episodes, Pairs_Episodes_Imported)
+  
+  return(BothPairs)
+}
 
 #################################################################################################################################################################
 ################################## OLD ##########################################################################################################################
