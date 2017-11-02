@@ -64,6 +64,10 @@ getCPEData=function(){
   cat("Removing Episodes Occuring in Depts Other Than Depts in Network\n")
   data=data[which(data$Department %in% V(directed.graph_Dept)$name),]
   
+  cat("Removing Episodes With Only One Unique Mechanism of Resistance\n")
+  TableMechanisms=table(data$FirstMechanism)
+  data=data[data$FirstMechanism %in% names(TableMechanisms)[TableMechanisms>1],]
+  
   cat("Renaming Rows and Episode Numbers\n")
   data$Episode=1:nrow(data)
   rownames(data)=1:nrow(data)
@@ -1253,7 +1257,7 @@ getPairsByWindow=function(Window, AllMinimumDistances, AllCandidateTransmitters)
   # min(unlist(MinimumDistances_MeansByNWindow))
   # Window=which.min(MinimumDistances_MeansByNWindow)
   
-  cat(paste("Subset Candidates from Day =", Window, "to Day", Window+7))
+  cat(paste("Subset Candidates from Day =", Window, "to Day", Window+WeekSlide*7))
   CandidateTransmitters=AllCandidateTransmitters[[Window]]
   # MinDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding[[Window]]
   

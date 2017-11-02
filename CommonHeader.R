@@ -28,6 +28,7 @@ library("visNetwork")
 library("ndtv")
 library("RColorBrewer")
 library("dplyr")
+library("plotrix")
 
 #########################
 #### SET ENVIRONMENT ####

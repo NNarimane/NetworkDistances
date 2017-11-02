@@ -100,6 +100,6 @@ ProportionTables=get5thQuantiles(Day, MinimumDistances_byDay_byMechanism_SharedD
 
 cat("Merge Tables\n")
 FinalTable=cbind(Results, MeanMinimumDistancesTable, RangeTable, ProportionTables[2,])
-write.table(FinalTable, file = paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2015 Data Days 1-30)/FinalTable.csv"), sep=",")
+write.table(FinalTable, file = paste0(writingDir,"100 Permutations (Reshuffled Shared Department 2014 Data Sliding Week)/FinalTable.csv"), sep=",")
 
 
