@@ -13,31 +13,32 @@ source("NetworkDistances/Can CPE episodes be explained by transfer network (Func
 ###########################
 #### LOAD DEPT NETWORK ####
 
-cat("Original or Transformed Weights\n")
-Transformed=T
-cat("If Trans Original or Inverse Transfer Weights\n")
-InvTrans=T
-Prob=T
+# cat("Original or Transformed Weights\n")
+# Transformed=T
+# cat("If Trans Original or Inverse Transfer Weights\n")
+# InvTrans=T
+# Prob=T
+# 
+# cat("Upload Department Contact Network\n")
+# if(Transformed){
+#   if(InvTrans){
+#     if(Prob){
+#       cat("Upload Department Network with Transformed Prob of Transfer Weights\n")
+#       load("Data/Department Network (Prob of Transfers).RData")
+#     }else{
+#       cat("Upload Department Network with Transformed Inverse Transfer Weights\n")
+#       load("Data/Department Network (Inverse Transfers).RData")
+#     }
+#   }else{
+#     cat("Upload Department Network with Transformed Weights\n")
+#     load("Data/Department Network (Transformed).RData")
+#   }
+# }else{
+#   cat("Upload Department Contact Network without Transformations\n")
+#   load("../Hospital_Network/HospitalNetwork/Data/Department Network.RData")
+# }
 
-cat("Upload Department Contact Network\n")
-if(Transformed){
-  if(InvTrans){
-    if(Prob){
-      cat("Upload Department Network with Transformed Prob of Transfer Weights\n")
-      load("Data/Department Network (Prob of Transfers).RData")
-    }else{
-      cat("Upload Department Network with Transformed Inverse Transfer Weights\n")
-      load("Data/Department Network (Inverse Transfers).RData")
-    }
-  }else{
-    cat("Upload Department Network with Transformed Weights\n")
-    load("Data/Department Network (Transformed).RData")
-  }
-}else{
-  cat("Upload Department Contact Network without Transformations\n")
-  load("../Hospital_Network/HospitalNetwork/Data/Department Network.RData")
-}
-
+cat("Upload Department Network with UPDATED Transformed Prob K Weights\n")
 load("Data/Department Network (Prob K).RData")
 
 ####################
@@ -85,19 +86,22 @@ Reshuffled=T
 ##########################
 #### STEP 1: CPE DATA ####
 
+cat("Choose Year\n")
+Year=2012
+
 cat("Choose start date\n")
-startDate="2012-01-01"
+startDate=paste0(as.character(Year),"-01-01")
 
 cat("Choose end date\n")
-endDate="2012-12-31"
+endDate=paste0(as.character(Year+1),"-01-01")
 
 cat("Get CPE Data with Mechanism and Class Info\n")
 data=getCPEData()
 
-#####################
-#### SAVE FOLDER ####
+########################
+#### WORKING FOLDER ####
 
-folder="2012 Final Observed and Permutation Results DEPT NET TRANS"
+folder=paste0("Dec 8 Results/", as.character(2012), " Results")
 
 ############################################
 #### STEP 2: GET CANDIDATE TRANSMITTERS ####

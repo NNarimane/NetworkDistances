@@ -77,6 +77,12 @@ getCPEData=function(){
   cat("Add Multiple Mechanisms to Data\n")
   data=cbind(data, Mechanisms)
   
+  cat("Add 'g' to General Mechanisms\n")
+  data$FirstMechanism[which(nchar(as.character(data$FirstMechanism)) <= 4)] = str_pad(data$FirstMechanism[which(nchar(as.character(data$FirstMechanism)) <= 4)] , 4, pad = "g", side="left")
+  data$SecondMechanism[which(nchar(as.character(data$SecondMechanism)) <= 4)] = str_pad(data$SecondMechanism[which(nchar(as.character(data$SecondMechanism)) <= 4)] , 4, pad = "g", side="left")
+  data$ThirdMechanism[str_detect(data$ThirdMechanism, " ")] = NA
+  data$ThirdMechanism[which(nchar(as.character(data$ThirdMechanism)) <= 4)] = str_pad(data$ThirdMechanism[which(nchar(as.character(data$ThirdMechanism)) <= 4)] , 4, pad = "g", side="left")
+  
   cat("Fix Department Variable\n")
   data$Department=str_pad(data$Department, 2, pad = "0")
   
