@@ -15,15 +15,30 @@ source("NetworkDistances/Can CPE episodes be explained by transfer network (Func
 
 cat("Original or Transformed Weights\n")
 Transformed=T
+cat("If Trans Original or Inverse Transfer Weights\n")
+InvTrans=T
+Prob=T
 
 cat("Upload Department Contact Network\n")
 if(Transformed){
-  cat("Upload Department Network with Transformed Weights\n")
-  load("Data/Department Network (Transformed).RData")
+  if(InvTrans){
+    if(Prob){
+      cat("Upload Department Network with Transformed Prob of Transfer Weights\n")
+      load("Data/Department Network (Prob of Transfers).RData")
+    }else{
+      cat("Upload Department Network with Transformed Inverse Transfer Weights\n")
+      load("Data/Department Network (Inverse Transfers).RData")
+    }
+  }else{
+    cat("Upload Department Network with Transformed Weights\n")
+    load("Data/Department Network (Transformed).RData")
+  }
 }else{
   cat("Upload Department Contact Network without Transformations\n")
   load("../Hospital_Network/HospitalNetwork/Data/Department Network.RData")
 }
+
+load("Data/Department Network (Prob K).RData")
 
 ####################
 #### PARAMETERS ####
@@ -71,13 +86,18 @@ Reshuffled=T
 #### STEP 1: CPE DATA ####
 
 cat("Choose start date\n")
-startDate="2014-01-01"
+startDate="2012-01-01"
 
 cat("Choose end date\n")
-endDate="2014-12-30"
+endDate="2012-12-31"
 
 cat("Get CPE Data with Mechanism and Class Info\n")
 data=getCPEData()
+
+#####################
+#### SAVE FOLDER ####
+
+folder="2012 Final Observed and Permutation Results DEPT NET TRANS"
 
 ############################################
 #### STEP 2: GET CANDIDATE TRANSMITTERS ####
@@ -86,11 +106,8 @@ NonPermutation=T
 CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding=foreach(i=1:Day) %do% getCandidateTransmitters(data=data, i)
 MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding=foreach(i=1:length(CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding)) %do% getMinimumDistances(i, CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding[[i]], weights = weights, algorithm = algorithm)
 
-save(CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding, file = paste0(writingDir,"100 Permutations (Reshuffled Shared Department 2014 Data Sliding Week)/CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-save(MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding, file = paste0(writingDir,"100 Permutations (Reshuffled Shared Department 2014 Data Sliding Week)/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-
-# load(paste0(writingDir,"100 Permutations (Reshuffled Shared Department 2014 Data Sliding Week)/CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-# load(paste0(writingDir,"100 Permutations (Reshuffled Shared Department 2014 Data Sliding Week)/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+save(CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding, file = paste0(writingDir,folder,"/CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+save(MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding, file = paste0(writingDir,folder,"/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 
 ############################################
 
@@ -155,7 +172,7 @@ stopCluster(cl)
 print("Cluster stopped")
 registerDoSEQ()
 
-save(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding, file=paste0(writingDir,"100 Permutations (Reshuffled Shared Department 2014 Data Sliding Week)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+save(AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding, file=paste0(writingDir,folder,"/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 
 #############################################################
 #### STEP 3: AVERAGE MINIMUM DISTANCES FROM PERMUATIONS ####
@@ -179,7 +196,7 @@ Results$StatSigDiff=Results$WilcoxonPairedRankTestPValues < 0.05
 #If stat. sig. p-value results (TRUE), reject H0 (meaning that the distributions differ)
 
 cat("Save Results\n")
-write.table(Results, file=paste0(writingDir,"100 Permutations (Reshuffled Shared Department 2014 Data Sliding Week)/Wilcoxon Rank Sum Test Results for Day 1 to ", Day," for Sliding Week ", Nruns," Permutations.csv"), sep=",")
+write.table(Results, file=paste0(writingDir,folder,"/Wilcoxon Rank Sum Test Results for Day 1 to ", Day," for Sliding Week ", Nruns," Permutations.csv"), sep=",")
 
 #######################################
 #### INTERPRETATION OF THE RESULTS ####

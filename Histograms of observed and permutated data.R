@@ -14,7 +14,7 @@ source("NetworkDistances/Can CPE episodes be explained by transfer network (Func
 #### HIST FUNCTION ####
 #######################
 
-getHistograms=function(main, Day, MinimumDistances, AllPermutatationMinimumDistances){
+getHistograms=function(main, Day, MinimumDistances, AllPermutatationMinimumDistances, breaks){
   #Observed Data
   MinimumDistances=MinimumDistances[[Day]]
   
@@ -41,24 +41,26 @@ getHistograms=function(main, Day, MinimumDistances, AllPermutatationMinimumDista
   l <- list(PermutationsMinimumDistancesSubset, MinimumDistancesSubset)
   
   # breaks <- pretty(unlist(l))
-  breaks=as.numeric(c(-1, 0, 1, 2, 3,4,5,6,7,8,9,10))
+  # breaks=as.numeric(c(-1, 0, 1, 2, 3,4,5,6,7,8,9,10))
+  breaks=as.numeric(c(-0.1, 0, 0.1, 0.2, 0.3,0.4,0.5,0.6,0.7,0.8,0.9,1))
   # levs = levels(cut(unlist(l), breaks=breaks))
-  levs = as.character(breaks + 1)
+  # levs = as.character(breaks + 1)
+  levs = as.character(breaks + 0.01)
   levs=levs[1:length(breaks)-1]
   
   if(Legend){
     FinalHist=multhist(l, breaks=breaks, names.arg = levs, 
                        freq=F, xlab="Network Distances", 
                        ylab="Density", main=main, cex.axis=1, 
-                       ylim=c(0,0.5), cex.main=5, cex.lab=3,
+                       ylim=ylim, cex.main=5, cex.lab=3,
                        legend.text=c("Permutations", "Observed"),
-                       col=c("gray30", "lightgrey"))
+                       col=c("aquamarine4", "aquamarine3"))
   }else{
     FinalHist=multhist(l, breaks=breaks, names.arg = levs, 
                        freq=F, xlab="Network Distances", 
                        ylab="Density", main=main, cex.axis=1, 
-                       ylim=c(0,0.5), cex.main=5, cex.lab=3,
-                       col=c("gray30", "lightgrey"))
+                       ylim=ylim, cex.main=5, cex.lab=3,
+                       col=c("aquamarine4", "aquamarine3"))
   }
   
 
@@ -71,9 +73,9 @@ getHistograms=function(main, Day, MinimumDistances, AllPermutatationMinimumDista
 
 Day=21
 
-##############
-#### HIST ####
-##############
+####################
+#### PARAMETERS ####
+####################
 
 #Layout
 # par(mfrow=c(2,2))
@@ -93,20 +95,26 @@ layout.show(n=5)
 
 par(mar=c(4,4,4,4))
 
+ylim=c(0,15)
+# ylim=c(0,5)
+
+##############
+#### HIST ####
+##############
 
 #2012
-load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2012 Data Sliding Week)/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2012 Data Sliding Week)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"2012 Final Observed and Permutation Results PROBTRANS NET/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"2012 Final Observed and Permutation Results PROBTRANS NET/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 
 Legend=F
-Hist2012=getHistograms("2012", Day, MinimumDistances, AllPermutatationMinimumDistances)
+Hist2012=getHistograms("2012", Day, MinimumDistances, AllPermutatationMinimumDistances, breaks)
 Hist2012
 
 #2013
-load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2013 Data Sliding Week)/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2013 Data Sliding Week)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"2013 Final Observed and Permutation Results PROBTRANS NET/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"2013 Final Observed and Permutation Results PROBTRANS NET/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 
@@ -115,8 +123,8 @@ Hist2013=getHistograms("2013", Day, MinimumDistances, AllPermutatationMinimumDis
 Hist2013
 
 #2014
-load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014 Data Sliding Week)/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2014 Data Sliding Week)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"2014 Final Observed and Permutation Results PROBTRANS NET/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"2014 Final Observed and Permutation Results PROBTRANS NET/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 
@@ -125,8 +133,8 @@ Hist2014=getHistograms("2014", Day, MinimumDistances, AllPermutatationMinimumDis
 Hist2014
 
 #2015
-load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2015 Data Sliding Week)/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2015 Data Sliding Week)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"2015 Final Observed and Permutation Results PROBTRANS NET/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"2015 Final Observed and Permutation Results PROBTRANS NET/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 
@@ -137,26 +145,5 @@ Hist2015
 par(mar=c(1,1,1,1))
 plot.new()
 legend(x="center",legend=c("Permutations", "Observed"),
-       horiz = TRUE, fill=c("gray30", "lightgrey"))
+       horiz = TRUE, fill=c("aquamarine4", "aquamarine3"))
 
-##################
-#### COMBINED ####
-##################
-
-# multiplot(Hist2012, Hist2014, Hist2013, Hist2015, cols=2)
-
-#All Plots with Legend
-# grid_arrange_shared_legend <- function(...) {
-#   plots <- list(...)
-#   g <- ggplotGrob(plots[[1]] + theme(legend.position="bottom"))$grobs
-#   legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
-#   lheight <- sum(legend$height)
-#   grid.arrange(
-#     do.call(arrangeGrob, lapply(plots, function(x)
-#       x + theme(legend.position="none"))),
-#     legend,
-#     ncol = 1,
-#     heights = unit.c(unit(1, "npc") - lheight, lheight))
-# }
-
-# grid_arrange_shared_legend(Plot2012, Plot2014, Plot2013, Plot2015)
