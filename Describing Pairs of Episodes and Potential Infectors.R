@@ -13,10 +13,10 @@ source("NetworkDistances/Can CPE episodes be explained by transfer network (Func
 ###########################
 #### WORKING DIRECTORY ####
 
-folder="2016 Final Observed and Permutation Results"
+folder=folder
 
 cat("Choose year to analyze\n")
-Year="2012"
+Year=Year
 
 #########################
 #### LOAD CANDIDATES ####
@@ -161,13 +161,14 @@ write.csv(SummaryTable, file=paste0(writingDir,folder,"/SummaryTable.csv"))
 #############################################
 #### Table of 2015-2015 Summary of Pairs ####
 
-Table2012=read.csv(file=paste0(writingDir,"2012 Final Observed and Permutation Results PROBTRANS NET/SummaryTable.csv"))
-Table2013=read.csv(file=paste0(writingDir,"2013 Final Observed and Permutation Results PROBTRANS NET/SummaryTable.csv"))
-Table2014=read.csv(file=paste0(writingDir,"2014 Final Observed and Permutation Results PROBTRANS NET/SummaryTable.csv"))
-Table2015=read.csv(file=paste0(writingDir,"2015 Final Observed and Permutation Results PROBTRANS NET/SummaryTable.csv"))
+
+Table2012=read.csv(file=paste0(writingDir,"Dec 8 Results/", as.character(2012), " Results","/SummaryTable.csv"))
+Table2013=read.csv(file=paste0(writingDir,"Dec 8 Results/", as.character(2013), " Results","/SummaryTable.csv"))
+Table2014=read.csv(file=paste0(writingDir,"Dec 8 Results/", as.character(2014), " Results","/SummaryTable.csv"))
+Table2015=read.csv(file=paste0(writingDir,"Dec 8 Results/", as.character(2015), " Results","/SummaryTable.csv"))
 # Table2016=read.csv(file=paste0(writingDir,"2016 Final Observed and Permutation Results/SummaryTable.csv"))
 
-load(file=paste0(writingDir,"2012 Final Observed and Permutation Results PROBTRANS NET/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(file=paste0(writingDir,"Dec 8 Results/", as.character(2012), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 Permutations2012=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 Permutations2012=foreach(i=1:length(Permutations2012[[1]])) %do% lapply(Permutations2012, `[[`, i) #get first elements i of each list
 Permutations2012=foreach(i=1:length(Permutations2012)) %do% CleaningFunction(Permutations2012[[i]])
@@ -180,7 +181,7 @@ Upper_CI_P2012=MeanPermutation2012 + 1.96*sd(Permutations2012, na.rm = T)/sqrt(l
 Lower_CI_P2012=MeanPermutation2012 - 1.96*sd(Permutations2012, na.rm = T)/sqrt(length(Permutations2012))
 
 
-load(file=paste0(writingDir,"2013 Final Observed and Permutation Results PROBTRANS NET/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(file=paste0(writingDir,"Dec 8 Results/", as.character(2013), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 Permutations2013=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 Permutations2013=foreach(i=1:length(Permutations2013[[1]])) %do% lapply(Permutations2013, `[[`, i) #get first elements i of each list
 Permutations2013=foreach(i=1:length(Permutations2013)) %do% CleaningFunction(Permutations2013[[i]])
@@ -193,7 +194,7 @@ Upper_CI_P2013=MeanPermutation2013 + 1.96*sd(Permutations2013, na.rm = T)/sqrt(l
 Lower_CI_P2013=MeanPermutation2013 - 1.96*sd(Permutations2013, na.rm = T)/sqrt(length(Permutations2013))
 
 
-load(file=paste0(writingDir,"2014 Final Observed and Permutation Results PROBTRANS NET/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(file=paste0(writingDir,"Dec 8 Results/", as.character(2014), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 Permutations2014=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 Permutations2014=foreach(i=1:length(Permutations2014[[1]])) %do% lapply(Permutations2014, `[[`, i) #get first elements i of each list
 Permutations2014=foreach(i=1:length(Permutations2014)) %do% CleaningFunction(Permutations2014[[i]])
@@ -206,7 +207,7 @@ Upper_CI_P2014=MeanPermutation2014 + 1.96*sd(Permutations2014, na.rm = T)/sqrt(l
 Lower_CI_P2014=MeanPermutation2014 - 1.96*sd(Permutations2014, na.rm = T)/sqrt(length(Permutations2014))
 
 
-load(file=paste0(writingDir,"2015 Final Observed and Permutation Results PROBTRANS NET/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(file=paste0(writingDir,"Dec 8 Results/", as.character(2015), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 Permutations2015=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 Permutations2015=foreach(i=1:length(Permutations2015[[1]])) %do% lapply(Permutations2015, `[[`, i) #get first elements i of each list
 Permutations2015=foreach(i=1:length(Permutations2015)) %do% CleaningFunction(Permutations2015[[i]])
@@ -249,7 +250,7 @@ colnames(AllSummaries)=c("Year","2012","2013","2014","2015")
 
 AllSummaries=rbind(AllSummaries[c(1:5),], AllPermutationsInfo, AllSummaries[c(6:13),])
 
-write.csv(AllSummaries, file=paste0(writingDir,"AllSummaries PROBTRANS 07.12.2017.csv"))
+write.csv(AllSummaries, file=paste0(writingDir,"AllSummaries 09.12.2017.csv"))
 
 
 

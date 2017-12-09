@@ -14,16 +14,16 @@ source("NetworkDistances/Can CPE episodes be explained by transfer network (Func
 ###########################
 #### WORKING DIRECTORY ####
 
-folder="2012 Final Observed and Permutation Results"
+folder=folder
 
 ####################################
 #### GET MIN SHORTEST DISTANCES ####
 
 cat("Get Observed Min Distances\n")
-load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2015 Data Sliding Week)/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,folder,"/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 
 cat("Get Permutations Min Distances\n")
-load(paste0(writingDir,"50 Permutations (Reshuffled Shared Department 2015 Data Sliding Week)/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,folder,"/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 
 #########################
 #### Get Mean Tables ####

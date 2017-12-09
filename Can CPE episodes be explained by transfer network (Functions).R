@@ -77,12 +77,12 @@ getCPEData=function(){
   cat("Add Multiple Mechanisms to Data\n")
   data=cbind(data, Mechanisms)
   
-  cat("Add 'g' to General Mechanisms\n")
-  data$FirstMechanism[which(nchar(as.character(data$FirstMechanism)) <= 4)] = str_pad(data$FirstMechanism[which(nchar(as.character(data$FirstMechanism)) <= 4)] , 4, pad = "g", side="left")
-  data$SecondMechanism[which(nchar(as.character(data$SecondMechanism)) <= 4)] = str_pad(data$SecondMechanism[which(nchar(as.character(data$SecondMechanism)) <= 4)] , 4, pad = "g", side="left")
+  # cat("Add 'g' to General Mechanisms\n")
+  # data$FirstMechanism[which(nchar(as.character(data$FirstMechanism)) <= 4)] = str_pad(data$FirstMechanism[which(nchar(as.character(data$FirstMechanism)) <= 4)] , 4, pad = "g", side="left")
+  # data$SecondMechanism[which(nchar(as.character(data$SecondMechanism)) <= 4)] = str_pad(data$SecondMechanism[which(nchar(as.character(data$SecondMechanism)) <= 4)] , 4, pad = "g", side="left")
   data$ThirdMechanism[str_detect(data$ThirdMechanism, " ")] = NA
-  data$ThirdMechanism[which(nchar(as.character(data$ThirdMechanism)) <= 4)] = str_pad(data$ThirdMechanism[which(nchar(as.character(data$ThirdMechanism)) <= 4)] , 4, pad = "g", side="left")
-  
+  # data$ThirdMechanism[which(nchar(as.character(data$ThirdMechanism)) <= 4)] = str_pad(data$ThirdMechanism[which(nchar(as.character(data$ThirdMechanism)) <= 4)] , 4, pad = "g", side="left")
+
   cat("Fix Department Variable\n")
   data$Department=str_pad(data$Department, 2, pad = "0")
   
@@ -326,21 +326,78 @@ getCandidateTransmitters=function(data, Time){
     }
   }
   
+  
   if(Mechanism){
     cat("Criterion 3: Same CPE Mechanism of Resistance\n")
-    MechanismRows=c("FirstMechanism","SecondMechanism","ThirdMechanism")
     
-    CandidateTransmitters_byMechanism=foreach(i=1:length(CandidateTransmitters_ImportationCorrection)) %do% {
+    FirstMechanism="FirstMechanism"
+    AnyMechanism=c("FirstMechanism", "SecondMechanism", "ThirdMechanism")
+    
+    CandidateTransmitters_byMechanism1=foreach(i=1:length(CandidateTransmitters_ImportationCorrection)) %do% {
       if(is.null(CandidateTransmitters_ImportationCorrection[[i]])){
         NULL
       }else{
-        list=c(data[i,MechanismRows])
-        CandidateTransmitters=CandidateTransmitters_ImportationCorrection[[i]]
-        CandidateTransmitters[which(apply(CandidateTransmitters[,MechanismRows], 1, function(i) any(grepl(paste(list, collapse="|"), i)))),]
+        if(any(nchar(data[i,FirstMechanism]) <= 3, na.rm = T)){
+          #Criteria 1: if general mechanism, can have any ancestor
+          list=c(data[i,FirstMechanism])
+          CandidateTransmitters=CandidateTransmitters_ImportationCorrection[[i]]
+          CandidateTransmitters[which(apply(CandidateTransmitters[,AnyMechanism], 1, 
+                                            function(i) any(grepl(paste(list, collapse="|"), i), na.rm = T))),]
+        }else{
+          #Criteria 2: if specific mechanism, can have same specific mechanism or general ancestor
+          list=c(paste0("^",data[i,FirstMechanism],"$"), paste0("^",substr(data[i,FirstMechanism], 1, 3),"$"))
+          CandidateTransmitters=CandidateTransmitters_ImportationCorrection[[i]]
+          CandidateTransmitters=CandidateTransmitters[which(apply(CandidateTransmitters[,AnyMechanism], 1, 
+                                                                  function(i) any(grepl(paste(list, collapse="|"), i), na.rm = T))),]
+        }
       }
-      }
+    }
     
-    Final_CandidateTransmitters=CandidateTransmitters_byMechanism
+    SecondMechanism="SecondMechanism"
+    CandidateTransmitters_byMechanism2=foreach(i=1:length(CandidateTransmitters_ImportationCorrection)) %do% {
+      if(is.null(CandidateTransmitters_ImportationCorrection[[i]])){
+        NULL
+      }else{
+        if(any(nchar(data[i,SecondMechanism]) <= 3, na.rm = T)){
+          #Criteria 1: if general mechanism, can have any ancestor
+          list=c(data[i,SecondMechanism])
+          CandidateTransmitters=CandidateTransmitters_ImportationCorrection[[i]]
+          CandidateTransmitters[which(apply(CandidateTransmitters[,AnyMechanism], 1, 
+                                            function(i) any(grepl(paste(list, collapse="|"), i), na.rm = T))),]
+        }else{
+          #Criteria 2: if specific mechanism, can have same specific mechanism or general ancestor
+          list=c(paste0("^",data[i,SecondMechanism],"$"), paste0("^",substr(data[i,SecondMechanism], 1, 3),"$"))
+          CandidateTransmitters=CandidateTransmitters_ImportationCorrection[[i]]
+          CandidateTransmitters=CandidateTransmitters[which(apply(CandidateTransmitters[,AnyMechanism], 1, 
+                                                                  function(i) any(grepl(paste(list, collapse="|"), i), na.rm = T))),]
+        }
+      }
+    }
+    
+    
+    ThirdMechanism="ThirdMechanism"
+    CandidateTransmitters_byMechanism3=foreach(i=1:length(CandidateTransmitters_ImportationCorrection)) %do% {
+      if(is.null(CandidateTransmitters_ImportationCorrection[[i]])){
+        NULL
+      }else{
+        if(any(nchar(data[i,ThirdMechanism]) <= 3, na.rm = T)){
+          #Criteria 1: if general mechanism, can have any ancestor
+          list=c(data[i,ThirdMechanism])
+          CandidateTransmitters=CandidateTransmitters_ImportationCorrection[[i]]
+          CandidateTransmitters[which(apply(CandidateTransmitters[,AnyMechanism], 1, 
+                                            function(i) any(grepl(paste(list, collapse="|"), i), na.rm = T))),]
+        }else{
+          #Criteria 2: if specific mechanism, can have same specific mechanism or general ancestor
+          list=c(paste0("^",data[i,ThirdMechanism],"$"), paste0("^",substr(data[i,ThirdMechanism], 1, 3),"$"))
+          CandidateTransmitters=CandidateTransmitters_ImportationCorrection[[i]]
+          CandidateTransmitters=CandidateTransmitters[which(apply(CandidateTransmitters[,AnyMechanism], 1, 
+                                                                  function(i) any(grepl(paste(list, collapse="|"), i), na.rm = T))),]
+        }
+      }
+    }
+    
+    nestedlist=list(CandidateTransmitters_byMechanism1, CandidateTransmitters_byMechanism2, CandidateTransmitters_byMechanism3)
+    Final_CandidateTransmitters=do.call(Map, c(f = rbind, nestedlist))
     
   }else{
     # cat("Criterion 3: Same CPE Class of Resistance\n")
@@ -360,21 +417,21 @@ getCandidateTransmitters=function(data, Time){
     #   CandidateTransmitters[CandidateTransmitters[,ThirdResistanceClass] %in% data[i,ThirdResistanceClass],]
     # }
     # Final_CandidateTransmitters=CandidateTransmitters_byThirdClass
-    
-    cat("Criterion 3: Same CPE Class of Resistance\n")
-    ClassRows=c("FirstClass","SecondClass","ThirdClass")
-    
-    CandidateTransmitters_byClass==foreach(i=1:length(CandidateTransmitters_ImportationCorrection)) %do% {
-      if(is.null(CandidateTransmitters_ImportationCorrection[[i]])){
-        NULL
-      }else{
-        list=c(data[i,ClassRows])
-        CandidateTransmitters[which(apply(CandidateTransmitters[,ClassRows], 1, function(i) any(grepl(paste(list, collapse="|"), i)))),]
-      }
+    #   
+    #   cat("Criterion 3: Same CPE Class of Resistance\n")
+    #   ClassRows=c("FirstClass","SecondClass","ThirdClass")
+    #   
+    #   CandidateTransmitters_byClass==foreach(i=1:length(CandidateTransmitters_ImportationCorrection)) %do% {
+    #     if(is.null(CandidateTransmitters_ImportationCorrection[[i]])){
+    #       NULL
+    #     }else{
+    #       list=c(data[i,ClassRows])
+    #       CandidateTransmitters[which(apply(CandidateTransmitters[,ClassRows], 1, function(i) any(grepl(paste(list, collapse="|"), i)))),]
+    #     }
+    #   }
+    #   Final_CandidateTransmitters=CandidateTransmitters_byClass
+    #   
     }
-    Final_CandidateTransmitters=CandidateTransmitters_byClass
-    
-  }
   
   return(Final_CandidateTransmitters)
 }

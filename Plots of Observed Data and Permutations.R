@@ -112,56 +112,56 @@ getYearlyPlots=function(MinimumDistances, AllPermutatationMinimumDistances, titl
 # ylim=c(2,5)
 
 low=2
-high=4.7
+high=4.5
 
-low=0
-high=0.05
-
-low=0
-high=5
+# low=0
+# high=0.05
+# 
+# low=0
+# high=5
 
 ###############
 #### PLOTS ####
 ###############
 
 #2012
-load(paste0(writingDir,"2012 Final Observed and Permutation Results INVERSETRANS NET/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-load(paste0(writingDir,"2012 Final Observed and Permutation Results INVERSETRANS NET/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"Dec 8 Results/", as.character(2012), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"Dec 8 Results/", as.character(2012), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 
 noLegend=T
-Plot2012=getYearlyPlots(MinimumDistances, AllPermutatationMinimumDistances, "2012 CPE Episodes (n=236)")
+Plot2012=getYearlyPlots(MinimumDistances, AllPermutatationMinimumDistances, "2012 CPE Episodes (n=237)")
 Plot2012
 
 #2013
-load(paste0(writingDir,"2013 Final Observed and Permutation Results INVERSETRANS NET/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-load(paste0(writingDir,"2013 Final Observed and Permutation Results INVERSETRANS NET/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"Dec 8 Results/", as.character(2013), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"Dec 8 Results/", as.character(2013), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 
 noLegend=T
-Plot2013=getYearlyPlots(MinimumDistances, AllPermutatationMinimumDistances, "2013 CPE Episodes (n=398)")
+Plot2013=getYearlyPlots(MinimumDistances, AllPermutatationMinimumDistances, "2013 CPE Episodes (n=399)")
 Plot2013
 
 #2014
-load(paste0(writingDir,"2014 Final Observed and Permutation Results INVERSETRANS NET/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-load(paste0(writingDir,"2014 Final Observed and Permutation Results INVERSETRANS NET/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"Dec 8 Results/", as.character(2014), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"Dec 8 Results/", as.character(2014), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 
 noLegend=T
-Plot2014=getYearlyPlots(MinimumDistances, AllPermutatationMinimumDistances, "2014 CPE Episodes (n=667)")
+Plot2014=getYearlyPlots(MinimumDistances, AllPermutatationMinimumDistances, "2014 CPE Episodes (n=669)")
 Plot2014
 
 #2015
-load(paste0(writingDir,"2015 Final Observed and Permutation Results INVERSETRANS NET/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-load(paste0(writingDir,"2015 Final Observed and Permutation Results INVERSETRANS NET/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"Dec 8 Results/", as.character(2015), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"Dec 8 Results/", as.character(2015), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 
 noLegend=T
-Plot2015=getYearlyPlots(MinimumDistances, AllPermutatationMinimumDistances, "2015 CPE Episodes (n=947)")
+Plot2015=getYearlyPlots(MinimumDistances, AllPermutatationMinimumDistances, "2015 CPE Episodes (n=950)")
 Plot2015
 
 #2015b

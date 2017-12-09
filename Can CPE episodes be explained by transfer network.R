@@ -87,7 +87,7 @@ Reshuffled=T
 #### STEP 1: CPE DATA ####
 
 cat("Choose Year\n")
-Year=2012
+Year=2015
 
 cat("Choose start date\n")
 startDate=paste0(as.character(Year),"-01-01")
@@ -101,7 +101,7 @@ data=getCPEData()
 ########################
 #### WORKING FOLDER ####
 
-folder=paste0("Dec 8 Results/", as.character(2012), " Results")
+folder=paste0("Dec 8 Results/", as.character(Year), " Results")
 
 ############################################
 #### STEP 2: GET CANDIDATE TRANSMITTERS ####
