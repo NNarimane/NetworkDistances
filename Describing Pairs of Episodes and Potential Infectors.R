@@ -13,10 +13,10 @@ source("NetworkDistances/Can CPE episodes be explained by transfer network (Func
 ###########################
 #### WORKING DIRECTORY ####
 
-folder=folder
-
 cat("Choose year to analyze\n")
-Year=Year
+Year=2013
+
+folder=paste0("Dec 8 Results/", as.character(Year), " Results")
 
 #########################
 #### LOAD CANDIDATES ####
@@ -50,6 +50,7 @@ registerDoSEQ()
 
 cat("Save or load data\n")
 save(AllPairs, file=paste0(writingDir,folder,"/AllPairs.RData"))
+load(file=paste0(writingDir,folder,"/AllPairs.RData"))
 
 ########################
 #### Seperate Pairs ####
@@ -84,6 +85,7 @@ colnames(ProportionsTable)=c("% Episodes Linked Out of Total",
                              "% Imported Episodes as Source",
                              "% Non-Imported Episodes as Targets")
 write.csv(ProportionsTable, file=paste0(writingDir,folder,"/Proportion Table of All Windows.csv"))
+ProportionsTable=read.csv(file=paste0(writingDir,folder,"/Proportion Table of All Windows.csv"))
 
 ################################
 #### Select Baseline Window ####
@@ -118,7 +120,7 @@ PairsDistanceTable=PairsDistanceTable[,c("Source","SourceImported","SourceDepart
 
 cat("Save or load\n")
 write.csv(PairsDistanceTable, file=paste0(writingDir,folder,"/PairsDistanceInfoTable.csv"))
-# load(paste0(writingDir,folder,"/PairsDistanceInfoTable.csv"))
+PairsDistanceTable=read.csv(file=paste0(writingDir,folder,"/PairsDistanceInfoTable.csv"))
 
 
 ######################################
@@ -155,7 +157,7 @@ colnames(SummaryTable)=Year
 
 cat("Save or load\n")
 write.csv(SummaryTable, file=paste0(writingDir,folder,"/SummaryTable.csv"))
-# load(paste0(writingDir,folder,"/SummaryTable.csv"))
+SummaryTable=read.csv(file=paste0(writingDir,folder,"/SummaryTable.csv"))
 
 
 #############################################
@@ -254,3 +256,110 @@ write.csv(AllSummaries, file=paste0(writingDir,"AllSummaries 09.12.2017.csv"))
 
 
 
+##########################################
+#### Analysis of Departments of Pairs ####
+
+# Spatial Summary function
+getSpatialSummary=function(Year){
+  Year=Year
+  folder=paste0("Dec 8 Results/", as.character(Year), " Results")
+  PairsDistanceTable=read.csv(file=paste0(writingDir,folder,"/PairsDistanceInfoTable.csv"))
+  
+  # Number of different departments link
+  UniqueSourceDepts=length(unique(PairsDistanceTable$SourceDepartment))
+  UniqueTargetDepts=length(unique(PairsDistanceTable$TargetDepartment))
+  UniqueSourceDepts_Imported=length(unique(PairsDistanceTable[which(PairsDistanceTable$SourceImported == "O"),]$SourceDepartment))
+  UniqueTargetDepts_Imported=length(unique(PairsDistanceTable[which(PairsDistanceTable$SourceImported == "O"),]$TargetDepartment))
+  
+  # Old Regions
+  library(readxl)
+  Dept_Region_GeoCodes = read_excel("C:/Users/Narimane/Dropbox/Network Distances and CPE Episodes/Data/Dept Region GeoCodes.xlsx")
+  colnames(Dept_Region_GeoCodes)[3]="OldRegions"
+  # New regions
+  NewRegions=data.frame(OldRegions=c("Bourgogne", "Franche-Comté",
+                                     "Aquitaine","Limousin","Poitou-Charente",
+                                     "Alsace","Champagne","Lorraine",
+                                     "Languedoc","Midi-Pyrénées",
+                                     "Haute-Normandie","Normandie","Basse-Normandie",
+                                     "Nord","Pas-de-Calais","Picardie",
+                                     "Auvergne","Rhône-Alpes",
+                                     "Provence-Alpes-Côte d'Azur",
+                                     "Centre",
+                                     "Corse",
+                                     "Bretagne",
+                                     "Ile-de-France",
+                                     "Pays-de-la-Loire"), 
+                        NewRegions=c("Bourgogne-Franche-Comté","Bourgogne-Franche-Comté",
+                                     "Nouvelle-Aquitaine","Nouvelle-Aquitaine","Nouvelle-Aquitaine",
+                                     "Grand Est","Grand Est","Grand Est",
+                                     "Occitanie","Occitanie",
+                                     "Normandie","Normandie","Normandie",
+                                     "Hauts-de-France","Hauts-de-France","Hauts-de-France",
+                                     "Auvergne-Rhône-Alpes","Auvergne-Rhône-Alpes",
+                                     "Provence-Alpes-Côte d'Azur",
+                                     "Centre-Val-de-Loire",
+                                     "Corse",
+                                     "Bretagne",
+                                     "Ile-de-France",
+                                     "Pays-de-la-Loire"))
+  # Merge
+  Dept_Region_GeoCodes=merge(Dept_Region_GeoCodes, NewRegions, by="OldRegions", all.x=T)
+  
+  # Add regions
+  PairsDistanceTable_Regions=merge(PairsDistanceTable, Dept_Region_GeoCodes, by.x="SourceDepartment", by.y="Department", all.x=T)
+  PairsDistanceTable_Regions=merge(PairsDistanceTable_Regions, Dept_Region_GeoCodes, by.x="TargetDepartment", by.y="Department", all.x=T)
+  colnames(PairsDistanceTable_Regions)=c("Target.Department","Source.Department","X","Source","Source.Imported","ShortestPathDistance",
+                                         "Source.Cases","Target","Mechanism","Source.OldRegion","Source.DeptName","Source.Latitude","Source.Longitude",
+                                         "Source.NewRegion","Target.OldRegion","Target.DeptName","Target.Latitude","Target.Longitude","Target.NewRegions")
+  PairsDistanceTable_Regions=PairsDistanceTable_Regions[,c("X","Source","Source.Department","Source.DeptName","Source.Imported","Source.Cases","Source.OldRegion","Source.Latitude","Source.Longitude",
+                                                           "Source.NewRegion","ShortestPathDistance","Mechanism",
+                                                           "Target","Target.Department","Target.DeptName","Target.OldRegion","Target.Latitude","Target.Longitude","Target.NewRegions")]
+  PairsDistanceTable_Regions=PairsDistanceTable_Regions[order(PairsDistanceTable_Regions$X),]
+  
+  # Proportion of same dept source and target
+  PercentSameDeptPairs=prop.table(table(PairsDistanceTable_Regions$Source.Department == PairsDistanceTable_Regions$Target.Department))[2]
+  # Proportion of same region source and target
+  PercentSameOldRegionPairs=prop.table(table(PairsDistanceTable_Regions$Source.OldRegion == PairsDistanceTable_Regions$Target.OldRegion))[2]
+  PercentSameNewRegionPairs=prop.table(table(PairsDistanceTable_Regions$Source.NewRegion == PairsDistanceTable_Regions$Target.NewRegion))[2]
+  
+  # Distance between pairs
+  library("geosphere")
+  PairsDistanceTable_Regions$GeoDistanceBetweenPairs=foreach(i=1:nrow(PairsDistanceTable_Regions), .combine = "c") %do% distm(PairsDistanceTable_Regions[i,c("Source.Longitude","Source.Latitude")], PairsDistanceTable_Regions[i,c("Target.Longitude","Target.Latitude")],  fun=distHaversine)/1000
+  # Mean geo distance among non-shared department pairs
+  MeanDistNonSameDeptPairs=mean(PairsDistanceTable_Regions[which(PairsDistanceTable_Regions$Source.Department != PairsDistanceTable_Regions$Target.Department),]$GeoDistanceBetweenPairs)
+  MeanDistNonSameDeptPairs
+  
+  MeanDistNonSameOldRegionPairs=mean(PairsDistanceTable_Regions[which(PairsDistanceTable_Regions$Source.OldRegion != PairsDistanceTable_Regions$Target.OldRegion),]$GeoDistanceBetweenPairs)
+  MeanDistNonSameOldRegionPairs
+  MeanDistNonSameNewRegionPairs=mean(PairsDistanceTable_Regions[which(PairsDistanceTable_Regions$Source.NewRegion != PairsDistanceTable_Regions$Target.NewRegion),]$GeoDistanceBetweenPairs)
+  MeanDistNonSameNewRegionPairs
+  
+  DistNonSameDeptPairs=PairsDistanceTable_Regions[which(PairsDistanceTable_Regions$Source.Department != PairsDistanceTable_Regions$Target.Department),]$GeoDistanceBetweenPairs
+  NumberNonSameDeptPairs=length(DistNonSameDeptPairs)
+  hist(DistNonSameDeptPairs, breaks=seq(from=0, to=900, by=100), freq = F, ylim = c(0,0.005))
+  DistNonSameDeptPairs=data.frame(DistNonSameDeptPairs, Cut=cut(DistNonSameDeptPairs, seq(from=0, to=900, by=100)))
+  DistributionDistNonSameDeptPairs=data.frame(prop.table(table(DistNonSameDeptPairs$Cut)))
+  rownames(DistributionDistNonSameDeptPairs)=DistributionDistNonSameDeptPairs$Var1
+  DistributionDistNonSameDeptPairs$Var1=NULL
+  colnames(DistributionDistNonSameDeptPairs)=as.character(Year)
+  
+  # Get department pairs analysis summary table
+  SpatialSummary=t(data.frame(UniqueSourceDepts,UniqueTargetDepts,
+                              UniqueSourceDepts_Imported,UniqueTargetDepts_Imported,
+                              PercentSameDeptPairs, PercentSameOldRegionPairs,
+                              PercentSameNewRegionPairs, MeanDistNonSameDeptPairs,
+                              MeanDistNonSameOldRegionPairs, MeanDistNonSameNewRegionPairs,
+                              NumberNonSameDeptPairs))
+  colnames(SpatialSummary)=as.character((Year))
+  SpatialSummary=rbind(SpatialSummary, DistributionDistNonSameDeptPairs)
+  
+  #Save
+  write.csv(SpatialSummary, file=paste0(writingDir,folder,"/SpatialSummary.csv"))
+  
+  return(SpatialSummary)
+}
+
+# Get all summaries
+AllSpatialSummaries=foreach(i=c(2012,2013,2014,2015), .combine = "cbind") %do% getSpatialSummary(i)
+# Save
+write.table(AllSpatialSummaries, file=paste0(writingDir, "AllSpatialSummaries.csv"))
