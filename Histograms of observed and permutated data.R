@@ -41,11 +41,13 @@ getHistograms=function(main, Day, MinimumDistances, AllPermutatationMinimumDista
   l <- list(PermutationsMinimumDistancesSubset, MinimumDistancesSubset)
   
   # breaks <- pretty(unlist(l))
-  breaks=as.numeric(c(-1, 0, 1, 2, 3,4,5,6,7,8,9,10))
+  # breaks=as.numeric(c(-1, 0, 1, 2, 3,4,5,6,7,8,9,10))
   # breaks=as.numeric(c(-0.1, 0, 0.1, 0.2, 0.3,0.4,0.5,0.6,0.7,0.8,0.9,1))
+  breaks=as.numeric(c(-0.01, 0, 0.01, 0.02, 0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1,
+                      0.2,0.3,0.4,0.5,0.6))
   # levs = levels(cut(unlist(l), breaks=breaks))
-  levs = as.character(breaks + 1)
-  # levs = as.character(breaks + 0.01)
+  # levs = as.character(breaks + 1)
+  levs = as.character(breaks + 0.01)
   levs=levs[1:length(breaks)-1]
   
   if(Legend){
@@ -95,7 +97,7 @@ layout.show(n=5)
 
 par(mar=c(4,4,4,4))
 
-ylim=c(0,0.5)
+ylim=c(0,50)
 # ylim=c(0,5)
 
 ##############
@@ -103,8 +105,8 @@ ylim=c(0,0.5)
 ##############
 
 #2012
-load(paste0(writingDir,"Dec 8 Results/", as.character(2012), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-load(paste0(writingDir,"Dec 8 Results/", as.character(2012), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"Dec 20 Results/", as.character(2012), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"Dec 20 Results/", as.character(2012), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 
@@ -113,8 +115,8 @@ Hist2012=getHistograms("2012", Day, MinimumDistances, AllPermutatationMinimumDis
 Hist2012
 
 #2013
-load(paste0(writingDir,"Dec 8 Results/", as.character(2013), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-load(paste0(writingDir,"Dec 8 Results/", as.character(2013), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"Dec 20 Results/", as.character(2013), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"Dec 20 Results/", as.character(2013), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 
@@ -123,8 +125,8 @@ Hist2013=getHistograms("2013", Day, MinimumDistances, AllPermutatationMinimumDis
 Hist2013
 
 #2014
-load(paste0(writingDir,"Dec 8 Results/", as.character(2014), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-load(paste0(writingDir,"Dec 8 Results/", as.character(2014), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"Dec 20 Results/", as.character(2014), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"Dec 20 Results/", as.character(2014), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 
@@ -133,8 +135,8 @@ Hist2014=getHistograms("2014", Day, MinimumDistances, AllPermutatationMinimumDis
 Hist2014
 
 #2015
-load(paste0(writingDir,"Dec 8 Results/", as.character(2015), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-load(paste0(writingDir,"Dec 8 Results/", as.character(2015), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"Dec 20 Results/", as.character(2015), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"Dec 20 Results/", as.character(2015), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
 

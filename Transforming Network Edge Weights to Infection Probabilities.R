@@ -18,7 +18,7 @@ source("NetworkDistances/Can CPE episodes be explained by transfer network (Func
 #### LOAD DEPT NETWORK ####
 
 cat("Deptartment Network or Hospital Network\n")
-Department=T
+Department=F
 if(Department){
   cat("Upload Department Contact Network\n")
   load("Data/Department Network.RData")
@@ -36,6 +36,53 @@ if(Department){
 cat("Upload 2014 ALL PMSI Data\n")
 load("C:/Users/Narimane/Desktop/Hospital Network Data/PMSI_ALL.RData")
 load("C:/Users/Narimane/Desktop/Hospital Network Data/pFlow_ALL.RData")
+
+
+########################
+#### GET DEPT GRAPH ####
+
+#Get Hopital Dept
+hospital_depts=substr(rownames(pFlow_ALL), 1, 2)
+pFlow_ALL_Dept=pFlow_ALL
+dimnames(pFlow_ALL_Dept) = list(hospital_depts, hospital_depts)
+
+#Compress Matrix
+pFlow_ALL_Dept = pFlow_ALL_Dept %*% sapply(unique(hospital_depts),"==", hospital_depts)
+pFlow_ALL_Dept = t(pFlow_ALL_Dept) %*% sapply(unique(hospital_depts),"==", hospital_depts)
+
+
+##################
+#### OPTION 1 ####
+
+# Transform edge weights into true transfer rates
+# Where size is # of stays per hospital (per X weeks)
+# And probabilty of transfer (per stay per X weeks)
+
+# i.e. 1-dbinom(0, size = Stay[[i]] * Weeks/52, prob = Edge_Weight[[i]]/Stay[[i]] * Weeks/52)
+
+##################
+#### OPTION 2 ####
+
+# Probabilty of transfer and infection, K
+
+###########################
+#### TRANSFORM WEIGHTS ####
+
+# Get 1/(1+Tij)
+pFlow_ALL_Dept_Transformed=1/(1+pFlow_ALL_Dept)
+# Remove same dept distances, change to zero
+diag(pFlow_ALL_Dept_Transformed)=0
+
+#Get directed graph
+directed.graph_Dept_Transformed = graph.adjacency(pFlow_ALL_Dept_Transformed, mode="directed", diag=TRUE, weighted=TRUE)
+algorithm = "dijkstra"
+Distances_Matrix=as.data.frame(distances(directed.graph_Dept_Transformed, mode="in", weights = E(directed.graph_Dept_Transformed)$weight, algorithm = "dijkstra"))
+min(Distances_Matrix[Distances_Matrix > 0])
+# Distances_Matrix[which.min(Distances_Matrix[Distances_Matrix > 0])]
+
+cat("Save new network")
+save(directed.graph_Dept_Transformed, file="Data/Department Network (1 over 1 plus weight).RData")
+
 
 ################################################
 #### Probabilty of Infection Function, Pij #####
@@ -62,35 +109,48 @@ load("C:/Users/Narimane/Desktop/Hospital Network Data/pFlow_ALL.RData")
 
 #### Calculate Parameters ####
 
-# T, annual hospital transfer rate
-NumberTransfers=sum(pFlow_ALL)
-NumberPatients=length(unique(PMSI_ALL$ID))
-T_rate=NumberTransfers/NumberPatients
+# # T, annual hospital transfer rate
+# NumberTransfers=sum(pFlow_ALL)
+# NumberPatients=length(unique(PMSI_ALL$ID))
+# T_rate=NumberTransfers/NumberPatients
+# 
+# T_rate=NumberPatients/12300000 #total patients 2014, http://www.atih.sante.fr/sites/default/files/public/content/2554/atih_chiffres_cles_2014.pdf
+# # Les 13 millions séjours ne sont pas l'ensemble de séjours, mais séjours qui ont évoqué un 
+# # transfert (point d'origine, points de passage ou d'arrivée). L'ensemble de séjours MCO est 28M.
+# 
+# T_rate=NumberTransfers/(27635493+1383134+7423590) #Fei email 28/01/2016; MCO, SSR SSRHA, SSR RHA séjours totale 2014
+# 
+# # I, CPE infection rate
+# NumberInfections=sum(getData("2014-01-01", "2015-01-01")$TotalCases)
+# I_rate=NumberInfections/NumberPatients
+# I_rate=NumberInfections/12300000
+# I_rate=0.051
+# 
+# # K, probabilty
+# K=T_rate*I_rate
+# 
+# if(Department){
+#   # nij, list of edge weights (inter-Department transfers)
+#   Edge_Weights=as.list(c(E(directed.graph_Dept)$weight))
+# }else{
+#   # nij, list of edge weights (inter-Hospital transfers)
+#   Edge_Weights=as.list(c(E(directed.graph_ALL)$weight))
+# }
 
-# I, CPE infection rate
-NumberInfections=sum(getData("2014-01-01", "2015-01-01")$TotalCases)
-I_rate=NumberInfections/NumberPatients
-
-# K, probabilty
-K=T_rate*I_rate
-
-if(Department){
-  # nij, list of edge weights (inter-Department transfers)
-  Edge_Weights=as.list(c(E(directed.graph_Dept)$weight))
-}else{
-  # nij, list of edge weights (inter-Hospital transfers)
-  Edge_Weights=as.list(c(E(directed.graph_ALL)$weight))
-}
 
 #### Calculate Pij ####
 
-# Pij = 1 - dbinom(0,K,nij)
-Probabilities=foreach(i=1:length(Edge_Weights)) %do% (1 - dbinom(0, size = Edge_Weights[[i]], prob = K))
-
-#### Calculate Pij as probability of transfer only ####
-
-# Probability that there will be at least 1 transfer per edge given T_rate
-Probabilities=foreach(i=1:length(Edge_Weights)) %do% (1 - dbinom(0, size = Edge_Weights[[i]], prob = T_rate))
+# # Pij = 1 - dbinom(0,K,nij)
+# Probabilities=foreach(i=1:length(Edge_Weights)) %do% (1 - dbinom(0, size = Edge_Weights[[i]], prob = K))
+# 
+# #### Calculate Pij as probability of transfer only ####
+# 
+#  
+# 
+# # Probability that there will be at least 1 transfer per edge given X_rate
+# X_rate=0.00001
+# Probabilities=foreach(i=1:length(Edge_Weights)) %do% (1 - dbinom(0, size = Edge_Weights[[i]], prob = X_rate))
+# 
 
 ###########################
 #### Transforming Pij #####
@@ -99,32 +159,34 @@ Probabilities=foreach(i=1:length(Edge_Weights)) %do% (1 - dbinom(0, size = Edge_
 # We define "shortest path" as the path with the highest infection probability pij 
 # Since -log(Pij) with higher infection Pij, the smaller the -log so the distance is storter
 
-Probabilities_Transformed=foreach(i=1:length(Probabilities)) %do% -log(Probabilities[[i]])
+# Probabilities_Transformed=foreach(i=1:length(Probabilities)) %do% -log(Probabilities[[i]])
 
 ###############################################
 #### Edge Weight Table of Transformations #####
 
-Edge_Weights_Table=cbind(unlist(Edge_Weights), unlist(Probabilities), unlist(Probabilities_Transformed))
-
-Edge_Weights_Table=as.data.frame(cbind(get.edgelist(directed.graph_Dept), unlist(Edge_Weights), unlist(Probabilities), unlist(Probabilities_Transformed)))
-colnames(Edge_Weights_Table)=c("SourceDept", "TargetDept", "Transfers", "Prob T", "LogTrans")
-write.table(Edge_Weights_Table, file=paste0(writingDir, "Prob K Edgelist.csv"))
-
-InverseTransfers=lapply(Edge_Weights, function(x) 1/x)
-Edge_Weights_Table=as.data.frame(cbind(get.edgelist(directed.graph_Dept), unlist(Edge_Weights), unlist(InverseTransfers)))
-colnames(Edge_Weights_Table)=c("SourceDept", "TargetDept", "Transfers", "Inverse")
-write.table(Edge_Weights_Table, file=paste0(writingDir, "Inverse Transfers Edgelist.csv"))
-
-InverseLogTransfers=lapply(Edge_Weights, function(x) 1/log(x))
-Edge_Weights_Table=as.data.frame(cbind(get.edgelist(directed.graph_Dept), unlist(Edge_Weights), unlist(InverseLogTransfers)))
-colnames(Edge_Weights_Table)=c("SourceDept", "TargetDept", "Transfers", "InverseLog")
-write.table(Edge_Weights_Table, file=paste0(writingDir, "Inverse Log Transfers Edgelist.csv"))
-
-ExpTransfers=lapply(Edge_Weights, function(x) exp(x))
-Edge_Weights_Table=as.data.frame(cbind(get.edgelist(directed.graph_Dept), unlist(Edge_Weights), unlist(InverseLogTransfers)))
-colnames(Edge_Weights_Table)=c("SourceDept", "TargetDept", "Transfers", "Exp")
-write.table(Edge_Weights_Table, file=paste0(writingDir, "Inverse Log Transfers Edgelist.csv"))
-
+# Edge_Weights_Table=cbind(unlist(Edge_Weights), unlist(Probabilities), unlist(Probabilities_Transformed))
+# 
+# Edge_Weights_Table=as.data.frame(cbind(get.edgelist(directed.graph_Dept), unlist(Edge_Weights), unlist(Probabilities), unlist(Probabilities_Transformed)))
+# colnames(Edge_Weights_Table)=c("SourceDept", "TargetDept", "Transfers", "Prob T", "LogTrans")
+# write.table(Edge_Weights_Table, file=paste0(writingDir, "Prob K Edgelist.csv"))
+# 
+# InverseTransfers=lapply(Edge_Weights, function(x) 1/x)
+# Edge_Weights_Table=as.data.frame(cbind(get.edgelist(directed.graph_Dept), unlist(Edge_Weights), unlist(InverseTransfers)))
+# colnames(Edge_Weights_Table)=c("SourceDept", "TargetDept", "Transfers", "Inverse")
+# write.table(Edge_Weights_Table, file=paste0(writingDir, "Inverse Transfers Edgelist.csv"))
+# 
+# InverseLogTransfers=lapply(Edge_Weights, function(x) 1/log(x))
+# Edge_Weights_Table=as.data.frame(cbind(get.edgelist(directed.graph_Dept), unlist(Edge_Weights), unlist(InverseLogTransfers)))
+# colnames(Edge_Weights_Table)=c("SourceDept", "TargetDept", "Transfers", "InverseLog")
+# write.table(Edge_Weights_Table, file=paste0(writingDir, "Inverse Log Transfers Edgelist.csv"))
+# 
+# ExpTransfers=lapply(Edge_Weights, function(x) exp(x))
+# Edge_Weights_Table=as.data.frame(cbind(get.edgelist(directed.graph_Dept), unlist(Edge_Weights), unlist(InverseLogTransfers)))
+# colnames(Edge_Weights_Table)=c("SourceDept", "TargetDept", "Transfers", "Exp")
+# write.table(Edge_Weights_Table, file=paste0(writingDir, "Inverse Log Transfers Edgelist.csv"))
+# 
+# SumEdgeWeights=sum(unlist(Edge_Weights))
+# TotalTransfers=ExpTransfers=lapply(Edge_Weights, function(x) SumEdgeWeights/x)
 
 ###########################################################
 #### Edge Weight Transformed as Inverse of # Transfers ####
@@ -145,17 +207,17 @@ write.table(Edge_Weights_Table, file=paste0(writingDir, "Inverse Log Transfers E
 ######################################################
 #### Edge Weight Transformed as Prob of Transfers ####
 
-cat("Replace edge weights of Department network with inverse of number of transfers")
-E(directed.graph_Dept)$weight=unlist(InverseTransfers)
-# edgelist=cbind(get.edgelist(directed.graph_Dept), E(directed.graph_Dept)$weight)
-# weights = E(directed.graph_Dept)$weight
-algorithm = "dijkstra"
-Distances_Matrix=as.data.frame(distances(directed.graph_Dept, mode="in", weights = E(directed.graph_Dept)$weight, algorithm = "dijkstra"))
-min(Distances_Matrix[Distances_Matrix > 0])
-# Distances_Matrix[which.min(Distances_Matrix[Distances_Matrix > 0])]
-
-cat("Save new network")
-save(directed.graph_Dept, file="Data/Department Network (Prob K).RData")
+# cat("Replace edge weights of Department network with inverse of number of transfers")
+# E(directed.graph_Dept)$weight=unlist(Probabilities_Transformed)
+# # edgelist=cbind(get.edgelist(directed.graph_Dept), E(directed.graph_Dept)$weight)
+# # weights = E(directed.graph_Dept)$weight
+# algorithm = "dijkstra"
+# Distances_Matrix=as.data.frame(distances(directed.graph_Dept, mode="in", weights = E(directed.graph_Dept)$weight, algorithm = "dijkstra"))
+# min(Distances_Matrix[Distances_Matrix > 0])
+# # Distances_Matrix[which.min(Distances_Matrix[Distances_Matrix > 0])]
+# 
+# cat("Save new network")
+# save(directed.graph_Dept, file="Data/Department Network (X_Rate 0.00001).RData")
 
 ######################################################################
 #### Replace original edge weights with transformed edge weights #####

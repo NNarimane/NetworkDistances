@@ -38,8 +38,19 @@ source("NetworkDistances/Can CPE episodes be explained by transfer network (Func
 #   load("../Hospital_Network/HospitalNetwork/Data/Department Network.RData")
 # }
 
-cat("Upload Department Network with UPDATED Transformed Prob K Weights\n")
-load("Data/Department Network (Prob K).RData")
+# cat("Upload Department Network with UPDATED Transformed Prob K Weights\n")
+# load("Data/Department Network (Prob K).RData")
+
+# cat("Upload Department Network with Total / Weights\n")
+# load("Data/Department Network (Total Divided by Weight).RData")
+
+# cat("Upload Department Network with X_Rate\n")
+# load("Data/Department Network (X_Rate 0.00001).RData")
+
+cat("Upload Department Network with 1 over 1 plus weight\n")
+load("Data/Department Network (1 over 1 plus weight).RData")
+directed.graph_Dept=directed.graph_Dept_Transformed
+
 
 ####################
 #### PARAMETERS ####
@@ -101,7 +112,7 @@ data=getCPEData()
 ########################
 #### WORKING FOLDER ####
 
-folder=paste0("Dec 8 Results/", as.character(Year), " Results")
+folder=paste0("Dec 20 Results/", as.character(Year), " Results")
 
 ############################################
 #### STEP 2: GET CANDIDATE TRANSMITTERS ####

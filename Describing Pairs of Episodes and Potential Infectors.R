@@ -14,9 +14,9 @@ source("NetworkDistances/Can CPE episodes be explained by transfer network (Func
 #### WORKING DIRECTORY ####
 
 cat("Choose year to analyze\n")
-Year=2013
+Year=2012
 
-folder=paste0("Dec 8 Results/", as.character(Year), " Results")
+folder=paste0("Dec 20 Results/", as.character(Year), " Results")
 
 #########################
 #### LOAD CANDIDATES ####
@@ -30,7 +30,7 @@ load(paste0(writingDir,folder,"/MinimumDistances_byDay_byMechanism_SharedDept_Re
 #######################
 #### GET ALL PAIRS ####
 
-run=FALSE
+run=T
 
 if(run){
   cat("Numer of cores to use\n")
@@ -60,7 +60,7 @@ if(run){
 ##############################
 #### DESCRIPTIVE ANALYSIS ####
 
-runDescriptiveAnalysis=FALSE
+runDescriptiveAnalysis=T
 if(runDescriptiveAnalysis){
   ########################
   #### Seperate Pairs ####
@@ -279,7 +279,7 @@ if(runAllSummaries){
 # Spatial Summary function
 getSpatialSummary=function(Year){
   Year=Year
-  folder=paste0("Dec 8 Results/", as.character(Year), " Results")
+  folder=paste0("Dec 20 Results/", as.character(Year), " Results")
   PairsDistanceTable=read.csv(file=paste0(writingDir,folder,"/PairsDistanceInfoTable.csv"))
   
   # Number of different departments link
