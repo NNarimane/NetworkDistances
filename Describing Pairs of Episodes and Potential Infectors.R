@@ -2,7 +2,7 @@
 ##### Describing Pairs of Episodes and Potential Infectors #####
 ################################################################
 
-source("CommonHeader.R")
+source("NetworkDistances/CommonHeader.R")
 
 ###################################
 #### GET FUNCTIONS SOURCE CODE ####
@@ -10,13 +10,10 @@ source("CommonHeader.R")
 source("NetworkDistances/Can CPE episodes be explained by transfer network (Functions).R", 
        local = FALSE, verbose = getOption("verbose"))
 
-###########################
-#### WORKING DIRECTORY ####
+#############################
+#### DATA AND PARAMETERS ####
 
-cat("Choose year to analyze\n")
-Year=2012
-
-folder=paste0("Dec 20 Results/", as.character(Year), " Results")
+source("NetworkDistances/DataParameters.R")
 
 #########################
 #### LOAD CANDIDATES ####
@@ -57,10 +54,12 @@ if(run){
   load(file=paste0(writingDir,folder,"/AllPairs.RData"))
 }
 
+
 ##############################
 #### DESCRIPTIVE ANALYSIS ####
 
 runDescriptiveAnalysis=T
+
 if(runDescriptiveAnalysis){
   ########################
   #### Seperate Pairs ####
@@ -75,11 +74,11 @@ if(runDescriptiveAnalysis){
   
   ProportionsTable=foreach(i=1:length(Pairs_Episodes), .combine = "rbind") %do% {
     cat("Total episodes linked out of total episodes\n")
-    TotalLinked=nrow(Pairs_Episodes[[i]])/nrow(data)
+    TotalLinked=length(unique(Pairs_Episodes[[i]][complete.cases(Pairs_Episodes[[i]])]))/nrow(data)
     
     cat("Total imported episodes linked out of total imported episodes\n")
     data_Imported=data[which(data$Imported == "O"),]
-    TotalLinkedImported=nrow(Pairs_Episodes_Imported[[i]])/nrow(data_Imported)
+    TotalLinkedImported=length(unique(Pairs_Episodes_Imported[[i]][complete.cases(Pairs_Episodes_Imported[[i]])]))/nrow(data_Imported)
     
     cat("Total non-imported episodes linked out of total non-imported episodes\n")
     NonImportedEpisodes=data$Episode[which(data$Imported == "N")]
@@ -106,24 +105,31 @@ if(runDescriptiveAnalysis){
   
   cat("Get distances between pairs\n")
   PairsDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding[[Window]]
-  NonNAPairsDistances=PairsDistances[complete.cases(PairsDistances)]
+  # NonNAPairsDistances=PairsDistances[complete.cases(PairsDistances)]
   
-  cat("Get Table of Pairs and Distances\n")
-  PairsDistanceTable=as.data.frame(cbind(Pairs_Episodes[[Window]], NonNAPairsDistances))
-  cat("Number of different sources\n")
-  length(levels(PairsDistanceTable$V1))
-  cat("Number of different targets\n")
-  length(levels(PairsDistanceTable$V2))
+  # cat("Get Table of Pairs and Distances\n")
+  # PairsDistanceTable=as.data.frame(cbind(Pairs_Episodes[[Window]], NonNAPairsDistances)) #issue
+  # cat("Number of different sources\n")
+  # length(levels(PairsDistanceTable$V1))
+  # cat("Number of different targets\n")
+  # length(levels(PairsDistanceTable$V2))
+  
+  cat("Combine pairs with distances\n")
+  PairsDistanceTable=data.frame(Pairs_Episodes[[Window]], PairsDistances, stringsAsFactors = F)
+  
+  cat("Remove NAs\n")
+  # PairsDistanceTable$V1=as.character(PairsDistanceTable$X1)
+  # PairsDistanceTable$V2=as.character(PairsDistanceTable$X2)
+  # PairsDistanceTable$NonNAPairsDistances=as.numeric(as.character(PairsDistanceTable$NonNAPairsDistances))
+  PairsDistanceTable$PairsDistances=as.numeric(as.character(PairsDistanceTable$PairsDistances))
+  PairsDistanceTable=PairsDistanceTable[complete.cases(PairsDistanceTable$PairsDistances),]
   
   cat("Add info to table\n")
-  PairsDistanceTable$V1=as.character(PairsDistanceTable$V1)
-  PairsDistanceTable$V2=as.character(PairsDistanceTable$V2)
-  PairsDistanceTable$NonNAPairsDistances=as.numeric(as.character(PairsDistanceTable$NonNAPairsDistances))
-  PairsDistanceTable$SourceImported=foreach(i=1:nrow(PairsDistanceTable), .combine = 'c') %do% data$Imported[which(data$Episode == PairsDistanceTable$V1[[i]])]
-  PairsDistanceTable$SourceDepartment=foreach(i=1:nrow(PairsDistanceTable), .combine = 'c') %do% data$Department[which(data$Episode == PairsDistanceTable$V1[[i]])]
-  PairsDistanceTable$SourceCases=foreach(i=1:nrow(PairsDistanceTable), .combine = 'c') %do% data$TotalCases[which(data$Episode == PairsDistanceTable$V1[[i]])]
-  PairsDistanceTable$TargetDepartment=foreach(i=1:nrow(PairsDistanceTable), .combine = 'c') %do% data$Department[which(data$Episode == PairsDistanceTable$V2[[i]])]
-  PairsDistanceTable$Mechanism=foreach(i=1:nrow(PairsDistanceTable), .combine = 'c') %do% data$Mechanism[which(data$Episode == PairsDistanceTable$V1[[i]])]
+  PairsDistanceTable$SourceImported=foreach(i=1:nrow(PairsDistanceTable), .combine = 'c') %do% data$Imported[which(data$Episode == PairsDistanceTable$X1[[i]])]
+  PairsDistanceTable$SourceDepartment=foreach(i=1:nrow(PairsDistanceTable), .combine = 'c') %do% data$Department[which(data$Episode == PairsDistanceTable$X1[[i]])]
+  PairsDistanceTable$SourceCases=foreach(i=1:nrow(PairsDistanceTable), .combine = 'c') %do% data$TotalCases[which(data$Episode == PairsDistanceTable$X1[[i]])]
+  PairsDistanceTable$TargetDepartment=foreach(i=1:nrow(PairsDistanceTable), .combine = 'c') %do% data$Department[which(data$Episode == PairsDistanceTable$X2[[i]])]
+  PairsDistanceTable$Mechanism=foreach(i=1:nrow(PairsDistanceTable), .combine = 'c') %do% data$Mechanism[which(data$Episode == PairsDistanceTable$X1[[i]])]
   colnames(PairsDistanceTable)=c("Source","Target","ShortestPathDistance","SourceImported","SourceDepartment","SourceCases","TargetDepartment","Mechanism")
   PairsDistanceTable=PairsDistanceTable[,c("Source","SourceImported","SourceDepartment","ShortestPathDistance","SourceCases","TargetDepartment","Target","Mechanism")]
   
@@ -140,24 +146,24 @@ if(runDescriptiveAnalysis){
   #### Summary of Pairs ####
   
   cat("Average Length Between Pairs\n")
-  Mean=mean(NonNAPairsDistances)
+  Mean=mean(PairsDistanceTable$ShortestPathDistance)
   cat("Range\n")
-  Min=min(NonNAPairsDistances)
-  NonZeroMin=min(NonNAPairsDistances[NonNAPairsDistances > 0])
-  Max=max(NonNAPairsDistances)
+  Min=min(PairsDistanceTable$ShortestPathDistance)
+  NonZeroMin=min(PairsDistanceTable$ShortestPathDistance[PairsDistanceTable$ShortestPathDistance > 0])
+  Max=max(PairsDistanceTable$ShortestPathDistance)
   cat("CI\n")
-  Upper_CI=Mean + 1.96*sd(NonNAPairsDistances)/sqrt(length(NonNAPairsDistances))
-  Lower_CI=Mean - 1.96*sd(NonNAPairsDistances)/sqrt(length(NonNAPairsDistances))
+  Upper_CI=Mean + 1.96*sd(PairsDistanceTable$ShortestPathDistance)/sqrt(length(PairsDistanceTable$ShortestPathDistance))
+  Lower_CI=Mean - 1.96*sd(PairsDistanceTable$ShortestPathDistance)/sqrt(length(PairsDistanceTable$ShortestPathDistance))
   
   EpisodesExplained=t(ProportionsTable[Window,])
-  SummaryTable=as.data.frame(rbind(nrow(data), nrow(data_Imported), length(NonImportedEpisodes), 
-                                   length(NonNAPairsDistances), Mean, Min, NonZeroMin, Max, Upper_CI, 
-                                   Lower_CI, EpisodesExplained))
+  SummaryTable=as.data.frame(rbind(nrow(data), nrow(unique(data_Imported)), length(unique(NonImportedEpisodes)), 
+                                   length(PairsDistanceTable$ShortestPathDistance), Mean, Lower_CI, Upper_CI, 
+                                   Min, NonZeroMin, Max, EpisodesExplained))
   
   
   rownames(SummaryTable)=c("Total Episodes", "Imported Episodes", "Non-Imported Episodes", 
-                           "Number of Pairs","Mean Distance","Min","NonZeroMin","Max",
-                           "Upper_CI","Lower_CI","% Episodes Linked Out of Total",
+                           "Number of Pairs","Mean Distance","Lower_CI","Upper_CI", "Min",
+                           "NonZeroMin","Max","% Episodes Linked Out of Total",
                            "% Imported Episodes as Source","% Non-Imported Episodes as Targets")
   colnames(SummaryTable)=Year
   
@@ -175,18 +181,18 @@ if(runDescriptiveAnalysis){
 #############################################
 #### Table of 2015-2015 Summary of Pairs ####
 
-runAllSummaries=FALSE
+runAllSummaries=T
 if(runAllSummaries){
   
   Window = 21
   
-  Table2012=read.csv(file=paste0(writingDir,"Dec 8 Results/", as.character(2012), " Results","/SummaryTable.csv"))
-  Table2013=read.csv(file=paste0(writingDir,"Dec 8 Results/", as.character(2013), " Results","/SummaryTable.csv"))
-  Table2014=read.csv(file=paste0(writingDir,"Dec 8 Results/", as.character(2014), " Results","/SummaryTable.csv"))
-  Table2015=read.csv(file=paste0(writingDir,"Dec 8 Results/", as.character(2015), " Results","/SummaryTable.csv"))
+  Table2012=read.csv(file=paste0(writingDir,"Jan 10 Results/", as.character(2012), " Results","/SummaryTable.csv"))
+  Table2013=read.csv(file=paste0(writingDir,"Jan 10 Results/", as.character(2013), " Results","/SummaryTable.csv"))
+  Table2014=read.csv(file=paste0(writingDir,"Jan 10 Results/", as.character(2014), " Results","/SummaryTable.csv"))
+  Table2015=read.csv(file=paste0(writingDir,"Jan 10 Results/", as.character(2015), " Results","/SummaryTable.csv"))
   # Table2016=read.csv(file=paste0(writingDir,"2016 Final Observed and Permutation Results/SummaryTable.csv"))
   
-  load(file=paste0(writingDir,"Dec 8 Results/", as.character(2012), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+  load(file=paste0(writingDir,"Jan 10 Results/", as.character(2012), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
   Permutations2012=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
   Permutations2012=foreach(i=1:length(Permutations2012[[1]])) %do% lapply(Permutations2012, `[[`, i) #get first elements i of each list
   Permutations2012=foreach(i=1:length(Permutations2012)) %do% CleaningFunction(Permutations2012[[i]])
@@ -199,7 +205,7 @@ if(runAllSummaries){
   Lower_CI_P2012=MeanPermutation2012 - 1.96*sd(Permutations2012, na.rm = T)/sqrt(length(Permutations2012))
   
   
-  load(file=paste0(writingDir,"Dec 8 Results/", as.character(2013), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+  load(file=paste0(writingDir,"Jan 10 Results/", as.character(2013), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
   Permutations2013=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
   Permutations2013=foreach(i=1:length(Permutations2013[[1]])) %do% lapply(Permutations2013, `[[`, i) #get first elements i of each list
   Permutations2013=foreach(i=1:length(Permutations2013)) %do% CleaningFunction(Permutations2013[[i]])
@@ -212,7 +218,7 @@ if(runAllSummaries){
   Lower_CI_P2013=MeanPermutation2013 - 1.96*sd(Permutations2013, na.rm = T)/sqrt(length(Permutations2013))
   
   
-  load(file=paste0(writingDir,"Dec 8 Results/", as.character(2014), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+  load(file=paste0(writingDir,"Jan 10 Results/", as.character(2014), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
   Permutations2014=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
   Permutations2014=foreach(i=1:length(Permutations2014[[1]])) %do% lapply(Permutations2014, `[[`, i) #get first elements i of each list
   Permutations2014=foreach(i=1:length(Permutations2014)) %do% CleaningFunction(Permutations2014[[i]])
@@ -225,7 +231,7 @@ if(runAllSummaries){
   Lower_CI_P2014=MeanPermutation2014 - 1.96*sd(Permutations2014, na.rm = T)/sqrt(length(Permutations2014))
   
   
-  load(file=paste0(writingDir,"Dec 8 Results/", as.character(2015), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+  load(file=paste0(writingDir,"Jan 10 Results/", as.character(2015), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
   Permutations2015=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
   Permutations2015=foreach(i=1:length(Permutations2015[[1]])) %do% lapply(Permutations2015, `[[`, i) #get first elements i of each list
   Permutations2015=foreach(i=1:length(Permutations2015)) %do% CleaningFunction(Permutations2015[[i]])
@@ -267,9 +273,9 @@ if(runAllSummaries){
   colnames(AllSummaries)=c("Year","2012","2013","2014","2015")
   
   AllSummaries=rbind(AllSummaries[c(1:5),], AllPermutationsInfo, AllSummaries[c(6:13),])
-  write.csv(AllSummaries, file=paste0(writingDir,"AllSummaries 09.12.2017.csv"))
+  write.csv(AllSummaries, file=paste0(writingDir,"AllSummaries 12.01.2018.csv"))
 }else{
-  AllSummaries=read.csv(file=paste0(writingDir,"AllSummaries 09.12.2017.csv"))
+  AllSummaries=read.csv(file=paste0(writingDir,"AllSummaries 12.01.2018.csv"))
 }
 
 

@@ -660,8 +660,8 @@ getPairsByWindow=function(Window, AllMinimumDistances, AllCandidateTransmitters)
   }
   
   cat("Remove NAs and bind\n")
-  Pairs_Episodes=Pairs_Episodes[complete.cases(Pairs_Episodes),]
-  Pairs_Episodes=Pairs_Episodes[order(Pairs_Episodes[,1]),]
+  # Pairs_Episodes=Pairs_Episodes[complete.cases(Pairs_Episodes),]
+  # Pairs_Episodes=Pairs_Episodes[order(Pairs_Episodes[,1]),]
   Pairs_Episodes=cbind(as.character(Pairs_Episodes[,1]), as.character(Pairs_Episodes[,2]))
   
   cat("Get all pairs of imported incident episodes and potential infectors by episode number\n")
@@ -676,8 +676,8 @@ getPairsByWindow=function(Window, AllMinimumDistances, AllCandidateTransmitters)
   }
   
   cat("Remove NAs and bind\n")
-  Pairs_Episodes_Imported=Pairs_Episodes_Imported[complete.cases(Pairs_Episodes_Imported),]
-  Pairs_Episodes_Imported=Pairs_Episodes_Imported[order(Pairs_Episodes_Imported[,1]),]
+  # Pairs_Episodes_Imported=Pairs_Episodes_Imported[complete.cases(Pairs_Episodes_Imported),]
+  # Pairs_Episodes_Imported=Pairs_Episodes_Imported[order(Pairs_Episodes_Imported[,1]),]
   Pairs_Episodes_Imported=cbind(as.character(Pairs_Episodes_Imported[,1]), as.character(Pairs_Episodes_Imported[,2]))
   
   cat("Combine Both Pairs to List\n")

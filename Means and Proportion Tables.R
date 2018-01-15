@@ -11,10 +11,10 @@ source("CommonHeader.R")
 source("NetworkDistances/Can CPE episodes be explained by transfer network (Functions).R", 
        local = FALSE, verbose = getOption("verbose"))
 
-###########################
-#### WORKING DIRECTORY ####
+#############################
+#### DATA AND PARAMETERS ####
 
-folder=folder
+source("DataParameters.R")
 
 ####################################
 #### GET MIN SHORTEST DISTANCES ####
