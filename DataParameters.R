@@ -52,9 +52,14 @@
 # cat("Upload Department Network with Edge Weights Over Stays\n")
 # load(paste0("Data/Department Network (Edge Weights Over Stays) ", Year, ".RData"))
 
-cat("Upload Department Network with Edge Weights Over Stays\n")
-load("Data/Department Network (Edge Weights Over Stays) 2014 Fixed.RData")
+# cat("Upload Department Network with Edge Weights Over Stays\n")
+# load("Data/Department Network (Edge Weights Over Stays) 2014 Fixed.RData")
 
+# cat("Upload Department Network with Alpha\n")
+# load("Data/Department Network (Alpha).RData")
+
+cat("Upload Department Network with Edge Weights Over Stays\n")
+load(file="Data/Department Network (Edge Weights Over Stays) 2014 Fixed WITH DEPT 08 09.RData")
 
 ####################
 #### PARAMETERS ####
@@ -84,8 +89,12 @@ if(Weighted){
   algorithm = "automatic"
 }
 
+cat("Distance Matrix Between Departments\n")
+Distances_Matrix=as.data.frame(distances(directed.graph_Dept, mode="in", weights = weights, algorithm = algorithm))
+NetworkDepts=colnames(Distances_Matrix)
+
 cat("Number of Simulations\n")
-Nruns=100
+Nruns=500
 
 cat("Mechanism or Class\n")
 Mechanism=T
@@ -114,7 +123,7 @@ data=getCPEData()
 ########################
 #### WORKING FOLDER ####
 
-folder=paste0("Jan 15 Results/", as.character(Year), " Results")
-
-
-
+# folder=paste0("1000 Permutations/", as.character(Year), " Results")
+# folder="2012-2015 All Results"
+folder=paste0("500 Permutations/", as.character(Year), " Results")
+# folder=paste0("500 Alpha/", as.character(Year), " Results")

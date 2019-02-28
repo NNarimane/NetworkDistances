@@ -2,7 +2,7 @@
 ##### Describing Pairs of Episodes and Potential Infectors #####
 ################################################################
 
-source("NetworkDistances/CommonHeader.R")
+source("CommonHeader.R")
 
 ###################################
 #### GET FUNCTIONS SOURCE CODE ####
@@ -24,6 +24,10 @@ load(paste0(writingDir,folder,"/CandidateTransmitters_byDay_byMechanism_SharedDe
 cat(paste("Load", Year, "Minimum Distances\n"))
 load(paste0(writingDir,folder,"/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
 
+cat(paste("Load", Year, "Potential Infector\n"))
+load(file = paste0(writingDir,folder,"/PotentialInfectors_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+PotentialInfectors=PotentialInfectors_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+
 #######################
 #### GET ALL PAIRS ####
 
@@ -32,28 +36,27 @@ run=T
 if(run){
   cat("Numer of cores to use\n")
   cores=5
-  
+
   cat("Make clusters for parallel\n")
   cl=makeCluster(cores)
   registerDoSNOW(cl)
   getDoParWorkers()
-  
+
   cat("RUN PARALLEL\n")
   AllPairs=foreach(i=1:length(MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding), .packages = c("igraph", "foreach")) %dopar% {
     getPairsByWindow(i, MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding, CandidateTransmitters_byDay_byMechanism_SharedDept_Reshuffled_Sliding)
   }
-  
+
   cat("Stop parallel\n")
   stopCluster(cl)
   print("Cluster stopped")
   registerDoSEQ()
-  
+
   cat("Save or load data\n")
   save(AllPairs, file=paste0(writingDir,folder,"/AllPairs.RData"))
 }else{
   load(file=paste0(writingDir,folder,"/AllPairs.RData"))
 }
-
 
 ##############################
 #### DESCRIPTIVE ANALYSIS ####
@@ -136,6 +139,19 @@ if(runDescriptiveAnalysis){
   cat("Save or load\n")
   write.csv(PairsDistanceTable, file=paste0(writingDir,folder,"/PairsDistanceInfoTable.csv"))
   
+  ####################################
+  #### Extended Analysis of Pairs ####
+  
+  SourceTable=aggregate(SourceImported ~ Source, data=PairsDistanceTable, FUN=length)
+  SourceTable=merge(SourceTable, data[,c(1,4)], by.x="Source", by.y="Episode", all.x=T)
+  SourceTable=SourceTable[order(SourceTable$Imported),]
+  rownames(SourceTable)=1:nrow(SourceTable)
+  
+  SourceFreqTable=table(SourceTable$SourceImported, SourceTable$Imported)
+  cat("Save or load\n")
+  write.csv(SourceFreqTable, file=paste0(writingDir,folder,"/SourceFreqTable.csv"))
+  
+  
   ######################################
   #### Source Total Number of Cases ####
   
@@ -186,13 +202,13 @@ if(runAllSummaries){
   
   Window = 21
   
-  Table2012=read.csv(file=paste0(writingDir,"Jan 10 Results/", as.character(2012), " Results","/SummaryTable.csv"))
-  Table2013=read.csv(file=paste0(writingDir,"Jan 10 Results/", as.character(2013), " Results","/SummaryTable.csv"))
-  Table2014=read.csv(file=paste0(writingDir,"Jan 10 Results/", as.character(2014), " Results","/SummaryTable.csv"))
-  Table2015=read.csv(file=paste0(writingDir,"Jan 10 Results/", as.character(2015), " Results","/SummaryTable.csv"))
+  Table2012=read.csv(file=paste0(writingDir,"Feb 14 Results/", as.character(2012), " Results","/SummaryTable.csv"))
+  Table2013=read.csv(file=paste0(writingDir,"Feb 14 Results/", as.character(2013), " Results","/SummaryTable.csv"))
+  Table2014=read.csv(file=paste0(writingDir,"Feb 14 Results/", as.character(2014), " Results","/SummaryTable.csv"))
+  Table2015=read.csv(file=paste0(writingDir,"Feb 14 Results/", as.character(2015), " Results","/SummaryTable.csv"))
   # Table2016=read.csv(file=paste0(writingDir,"2016 Final Observed and Permutation Results/SummaryTable.csv"))
   
-  load(file=paste0(writingDir,"Jan 10 Results/", as.character(2012), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+  load(file=paste0(writingDir,"Feb 14 Results/", as.character(2012), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
   Permutations2012=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
   Permutations2012=foreach(i=1:length(Permutations2012[[1]])) %do% lapply(Permutations2012, `[[`, i) #get first elements i of each list
   Permutations2012=foreach(i=1:length(Permutations2012)) %do% CleaningFunction(Permutations2012[[i]])
@@ -205,7 +221,7 @@ if(runAllSummaries){
   Lower_CI_P2012=MeanPermutation2012 - 1.96*sd(Permutations2012, na.rm = T)/sqrt(length(Permutations2012))
   
   
-  load(file=paste0(writingDir,"Jan 10 Results/", as.character(2013), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+  load(file=paste0(writingDir,"Feb 14 Results/", as.character(2013), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
   Permutations2013=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
   Permutations2013=foreach(i=1:length(Permutations2013[[1]])) %do% lapply(Permutations2013, `[[`, i) #get first elements i of each list
   Permutations2013=foreach(i=1:length(Permutations2013)) %do% CleaningFunction(Permutations2013[[i]])
@@ -218,7 +234,7 @@ if(runAllSummaries){
   Lower_CI_P2013=MeanPermutation2013 - 1.96*sd(Permutations2013, na.rm = T)/sqrt(length(Permutations2013))
   
   
-  load(file=paste0(writingDir,"Jan 10 Results/", as.character(2014), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+  load(file=paste0(writingDir,"Feb 14 Results/", as.character(2014), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
   Permutations2014=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
   Permutations2014=foreach(i=1:length(Permutations2014[[1]])) %do% lapply(Permutations2014, `[[`, i) #get first elements i of each list
   Permutations2014=foreach(i=1:length(Permutations2014)) %do% CleaningFunction(Permutations2014[[i]])
@@ -231,7 +247,7 @@ if(runAllSummaries){
   Lower_CI_P2014=MeanPermutation2014 - 1.96*sd(Permutations2014, na.rm = T)/sqrt(length(Permutations2014))
   
   
-  load(file=paste0(writingDir,"Jan 10 Results/", as.character(2015), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+  load(file=paste0(writingDir,"Feb 14 Results/", as.character(2015), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
   Permutations2015=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
   Permutations2015=foreach(i=1:length(Permutations2015[[1]])) %do% lapply(Permutations2015, `[[`, i) #get first elements i of each list
   Permutations2015=foreach(i=1:length(Permutations2015)) %do% CleaningFunction(Permutations2015[[i]])
@@ -273,116 +289,187 @@ if(runAllSummaries){
   colnames(AllSummaries)=c("Year","2012","2013","2014","2015")
   
   AllSummaries=rbind(AllSummaries[c(1:5),], AllPermutationsInfo, AllSummaries[c(6:13),])
-  write.csv(AllSummaries, file=paste0(writingDir,"AllSummaries 12.01.2018.csv"))
+  write.csv(AllSummaries, file=paste0(writingDir,"Feb 14 Results/AllSummaries.csv"))
 }else{
-  AllSummaries=read.csv(file=paste0(writingDir,"AllSummaries 12.01.2018.csv"))
+  AllSummaries=read.csv(file=paste0(writingDir,"Feb 14 Results/AllSummaries.csv"))
 }
 
 
-##########################################
-#### Analysis of Departments of Pairs ####
 
-# Spatial Summary function
-getSpatialSummary=function(Year){
-  Year=Year
-  folder=paste0("Dec 20 Results/", as.character(Year), " Results")
-  PairsDistanceTable=read.csv(file=paste0(writingDir,folder,"/PairsDistanceInfoTable.csv"))
-  
-  # Number of different departments link
-  UniqueSourceDepts=length(unique(PairsDistanceTable$SourceDepartment))
-  UniqueTargetDepts=length(unique(PairsDistanceTable$TargetDepartment))
-  UniqueSourceDepts_Imported=length(unique(PairsDistanceTable[which(PairsDistanceTable$SourceImported == "O"),]$SourceDepartment))
-  UniqueTargetDepts_Imported=length(unique(PairsDistanceTable[which(PairsDistanceTable$SourceImported == "O"),]$TargetDepartment))
-  
-  # Old Regions
-  library(readxl)
-  Dept_Region_GeoCodes = read_excel("C:/Users/Narimane/Dropbox/Network Distances and CPE Episodes/Data/Dept Region GeoCodes.xlsx")
-  colnames(Dept_Region_GeoCodes)[3]="OldRegions"
-  # New regions
-  NewRegions=data.frame(OldRegions=c("Bourgogne", "Franche-Comté",
-                                     "Aquitaine","Limousin","Poitou-Charente",
-                                     "Alsace","Champagne","Lorraine",
-                                     "Languedoc","Midi-Pyrénées",
-                                     "Haute-Normandie","Normandie","Basse-Normandie",
-                                     "Nord","Pas-de-Calais","Picardie",
-                                     "Auvergne","Rhône-Alpes",
-                                     "Provence-Alpes-Côte d'Azur",
-                                     "Centre",
-                                     "Corse",
-                                     "Bretagne",
-                                     "Ile-de-France",
-                                     "Pays-de-la-Loire"), 
-                        NewRegions=c("Bourgogne-Franche-Comté","Bourgogne-Franche-Comté",
-                                     "Nouvelle-Aquitaine","Nouvelle-Aquitaine","Nouvelle-Aquitaine",
-                                     "Grand Est","Grand Est","Grand Est",
-                                     "Occitanie","Occitanie",
-                                     "Normandie","Normandie","Normandie",
-                                     "Hauts-de-France","Hauts-de-France","Hauts-de-France",
-                                     "Auvergne-Rhône-Alpes","Auvergne-Rhône-Alpes",
-                                     "Provence-Alpes-Côte d'Azur",
-                                     "Centre-Val-de-Loire",
-                                     "Corse",
-                                     "Bretagne",
-                                     "Ile-de-France",
-                                     "Pays-de-la-Loire"))
-  # Merge
-  Dept_Region_GeoCodes=merge(Dept_Region_GeoCodes, NewRegions, by="OldRegions", all.x=T)
-  
-  # Add regions
-  PairsDistanceTable_Regions=merge(PairsDistanceTable, Dept_Region_GeoCodes, by.x="SourceDepartment", by.y="Department", all.x=T)
-  PairsDistanceTable_Regions=merge(PairsDistanceTable_Regions, Dept_Region_GeoCodes, by.x="TargetDepartment", by.y="Department", all.x=T)
-  colnames(PairsDistanceTable_Regions)=c("Target.Department","Source.Department","X","Source","Source.Imported","ShortestPathDistance",
-                                         "Source.Cases","Target","Mechanism","Source.OldRegion","Source.DeptName","Source.Latitude","Source.Longitude",
-                                         "Source.NewRegion","Target.OldRegion","Target.DeptName","Target.Latitude","Target.Longitude","Target.NewRegions")
-  PairsDistanceTable_Regions=PairsDistanceTable_Regions[,c("X","Source","Source.Department","Source.DeptName","Source.Imported","Source.Cases","Source.OldRegion","Source.Latitude","Source.Longitude",
-                                                           "Source.NewRegion","ShortestPathDistance","Mechanism",
-                                                           "Target","Target.Department","Target.DeptName","Target.OldRegion","Target.Latitude","Target.Longitude","Target.NewRegions")]
-  PairsDistanceTable_Regions=PairsDistanceTable_Regions[order(PairsDistanceTable_Regions$X),]
-  
-  # Proportion of same dept source and target
-  PercentSameDeptPairs=prop.table(table(PairsDistanceTable_Regions$Source.Department == PairsDistanceTable_Regions$Target.Department))[2]
-  # Proportion of same region source and target
-  PercentSameOldRegionPairs=prop.table(table(PairsDistanceTable_Regions$Source.OldRegion == PairsDistanceTable_Regions$Target.OldRegion))[2]
-  PercentSameNewRegionPairs=prop.table(table(PairsDistanceTable_Regions$Source.NewRegion == PairsDistanceTable_Regions$Target.NewRegion))[2]
-  
-  # Distance between pairs
-  library("geosphere")
-  PairsDistanceTable_Regions$GeoDistanceBetweenPairs=foreach(i=1:nrow(PairsDistanceTable_Regions), .combine = "c") %do% distm(PairsDistanceTable_Regions[i,c("Source.Longitude","Source.Latitude")], PairsDistanceTable_Regions[i,c("Target.Longitude","Target.Latitude")],  fun=distHaversine)/1000
-  # Mean geo distance among non-shared department pairs
-  MeanDistNonSameDeptPairs=mean(PairsDistanceTable_Regions[which(PairsDistanceTable_Regions$Source.Department != PairsDistanceTable_Regions$Target.Department),]$GeoDistanceBetweenPairs)
-  MeanDistNonSameDeptPairs
-  
-  MeanDistNonSameOldRegionPairs=mean(PairsDistanceTable_Regions[which(PairsDistanceTable_Regions$Source.OldRegion != PairsDistanceTable_Regions$Target.OldRegion),]$GeoDistanceBetweenPairs)
-  MeanDistNonSameOldRegionPairs
-  MeanDistNonSameNewRegionPairs=mean(PairsDistanceTable_Regions[which(PairsDistanceTable_Regions$Source.NewRegion != PairsDistanceTable_Regions$Target.NewRegion),]$GeoDistanceBetweenPairs)
-  MeanDistNonSameNewRegionPairs
-  
-  DistNonSameDeptPairs=PairsDistanceTable_Regions[which(PairsDistanceTable_Regions$Source.Department != PairsDistanceTable_Regions$Target.Department),]$GeoDistanceBetweenPairs
-  NumberNonSameDeptPairs=length(DistNonSameDeptPairs)
-  hist(DistNonSameDeptPairs, breaks=seq(from=0, to=900, by=100), freq = F, ylim = c(0,0.005))
-  DistNonSameDeptPairs=data.frame(DistNonSameDeptPairs, Cut=cut(DistNonSameDeptPairs, seq(from=0, to=900, by=100)))
-  DistributionDistNonSameDeptPairs=data.frame(prop.table(table(DistNonSameDeptPairs$Cut)))
-  rownames(DistributionDistNonSameDeptPairs)=DistributionDistNonSameDeptPairs$Var1
-  DistributionDistNonSameDeptPairs$Var1=NULL
-  colnames(DistributionDistNonSameDeptPairs)=as.character(Year)
-  
-  # Get department pairs analysis summary table
-  SpatialSummary=t(data.frame(UniqueSourceDepts,UniqueTargetDepts,
-                              UniqueSourceDepts_Imported,UniqueTargetDepts_Imported,
-                              PercentSameDeptPairs, PercentSameOldRegionPairs,
-                              PercentSameNewRegionPairs, MeanDistNonSameDeptPairs,
-                              MeanDistNonSameOldRegionPairs, MeanDistNonSameNewRegionPairs,
-                              NumberNonSameDeptPairs))
-  colnames(SpatialSummary)=as.character((Year))
-  SpatialSummary=rbind(SpatialSummary, DistributionDistNonSameDeptPairs)
-  
-  #Save
-  write.csv(SpatialSummary, file=paste0(writingDir,folder,"/SpatialSummary.csv"))
-  
-  return(SpatialSummary)
-}
+######################################
+#### Number Episodes per Infector ####
 
-# Get all summaries
-AllSpatialSummaries=foreach(i=c(2012,2013,2014,2015), .combine = "cbind") %do% getSpatialSummary(i)
-# Save
-write.table(AllSpatialSummaries, file=paste0(writingDir, "AllSpatialSummaries.csv"))
+cat("Load\n")
+Table2012=read.csv(file=paste0(writingDir,"Feb 14 Results/", as.character(2012), " Results","/PairsDistanceInfoTable.csv"))
+Table2013=read.csv(file=paste0(writingDir,"Feb 14 Results/", as.character(2013), " Results","/PairsDistanceInfoTable.csv"))
+Table2014=read.csv(file=paste0(writingDir,"Feb 14 Results/", as.character(2014), " Results","/PairsDistanceInfoTable.csv"))
+Table2015=read.csv(file=paste0(writingDir,"Feb 14 Results/", as.character(2015), " Results","/PairsDistanceInfoTable.csv"))
+
+Freq2012=as.data.frame(table(table(Table2012$Source)), stringsAsFactors = F)
+Freq2013=as.data.frame(table(table(Table2013$Source)), stringsAsFactors = F)
+Freq2014=as.data.frame(table(table(Table2014$Source)), stringsAsFactors = F)
+Freq2015=as.data.frame(table(table(Table2015$Source)), stringsAsFactors = F)
+
+AllFrequencies1=merge(Freq2012, Freq2013, by="Var1", all=T)
+colnames(AllFrequencies1)=c("Var1", "Year2012", "Year2013")
+AllFrequencies2=merge(AllFrequencies1, Freq2014, by="Var1", all=T)
+colnames(AllFrequencies2)=c("Var1", "Year2012", "Year2013", "Year2014")
+AllFrequencies3=merge(AllFrequencies2, Freq2015, by="Var1", all=T)
+colnames(AllFrequencies3)=c("Freq", "Year2012", "Year2013", "Year2014", "Year2015")
+AllFrequencies3[is.na(AllFrequencies3)] = 0
+AllFrequencies4=rbind(c(8,0,0,0,0), AllFrequencies3)
+AllFrequencies4=AllFrequencies4[order(AllFrequencies4$Freq),]
+rownames(AllFrequencies4) = 1:9
+
+# melt the data frame for plotting
+AllFrequencies5 <- melt(AllFrequencies4, id.vars='Freq')
+
+# Unstacked
+ggplot(AllFrequencies5, aes(Freq, value)) +   
+  geom_bar(aes(fill = variable), position = "dodge", stat="identity") +
+  scale_fill_manual(values=c("aquamarine1", "aquamarine2", "aquamarine3", "aquamarine4"), 
+                    labels=c("2012","2013","2014","2015")) +
+  theme(legend.title=element_blank()) +
+  xlab("Number of Non-Imported Episodes from Single Potential Infector") +
+  ylab("Number of Potential Infectors") +
+  theme_minimal()
+
+# Stacked
+ggplot(AllFrequencies5, aes(Freq, value, fill = variable)) +   
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values=c("aquamarine1", "aquamarine2", "aquamarine3", "aquamarine4"), 
+                    labels=c("2012","2013","2014","2015")) +
+  theme(legend.title=element_blank()) +
+  xlab("Number of Non-Imported Episodes from Single Potential Infector") +
+  ylab("Number of Potential Infectors") +
+  theme_minimal()
+
+####################
+### Only 2 >
+
+AllFrequencies6=AllFrequencies5[which(AllFrequencies5$Freq > 2),]
+
+# Unstacked
+ggplot(AllFrequencies6, aes(Freq, value)) +   
+  geom_bar(aes(fill = variable), position = "dodge", stat="identity") +
+  scale_fill_manual(values=c("aquamarine1", "aquamarine2", "aquamarine3", "aquamarine4"), 
+                    labels=c("2012","2013","2014","2015")) +
+  guides(fill=guide_legend(title="Year")) +
+  xlab("Number of Non-Imported Episodes from Single Potential Infector") +
+  ylab("Number of Potential Infectors") +
+  theme_minimal()
+
+# Stacked
+ggplot(AllFrequencies6, aes(Freq, value, fill = variable)) +   
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values=c("aquamarine1", "aquamarine2", "aquamarine3", "aquamarine4"), 
+                    labels=c("2012","2013","2014","2015")) +
+  guides(fill=guide_legend(title="Year")) +
+  xlab("Number of Non-Imported Episodes from Single Potential Infector") +
+  ylab("Number of Potential Infectors") +
+  theme_minimal()
+
+##############
+### void
+
+# Unstacked
+ggplot(AllFrequencies5, aes(Freq, value)) +   
+  geom_bar(aes(fill = variable), position = "dodge", stat="identity") +
+  scale_fill_manual(values=c("aquamarine1", "aquamarine2", "aquamarine3", "aquamarine4"), 
+                    labels=c("2012","2013","2014","2015")) +
+  xlab("Number of Non-Imported Episodes from Single Potential Infector") +
+  ylab("Number of Potential Infectors") +
+  theme_minimal() +
+  theme(axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        legend.position="none") 
+  
+
+# Stacked
+ggplot(AllFrequencies5, aes(Freq, value, fill = variable)) +   
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values=c("aquamarine1", "aquamarine2", "aquamarine3", "aquamarine4"), 
+                    labels=c("2012","2013","2014","2015")) +
+  theme_minimal() +
+  theme(axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        legend.position="none") 
+
+
+#####################
+##### Trend Test ####
+
+# 2 or more
+SS2=c(sum(Freq2012[2:nrow(Freq2012),2]), 
+      sum(Freq2013[2:nrow(Freq2013),2]),
+      sum(Freq2014[2:nrow(Freq2014),2]),
+      sum(Freq2015[2:nrow(Freq2015),2]))
+EP=c(sum(Freq2012[,2]), 
+      sum(Freq2013[,2]),
+      sum(Freq2014[,2]),
+      sum(Freq2015[,2]))
+
+#Test
+prop.trend.test(SS2, EP)
+# H0: There is no linear trend in the proportion of cases across age groups
+# Ha: There is a linear trend in the proportion of cases across age groups
+
+# 3 or more
+SS3=c(sum(Freq2012[3:nrow(Freq2012),2]), 
+      sum(Freq2013[3:nrow(Freq2013),2]),
+      sum(Freq2014[3:nrow(Freq2014),2]),
+      sum(Freq2015[3:nrow(Freq2015),2]))
+
+#Test
+prop.trend.test(SS3, EP)
+# H0: There is no linear trend in the proportion of cases across age groups
+# Ha: There is a linear trend in the proportion of cases across age groups
+
+# 4 or more
+SS4=c(sum(Freq2012[4:nrow(Freq2012),2]), 
+      sum(Freq2013[4:nrow(Freq2013),2]),
+      sum(Freq2014[4:nrow(Freq2014),2]),
+      sum(Freq2015[4:nrow(Freq2015),2]))
+
+#Test
+prop.trend.test(SS4, EP)
+# H0: There is no linear trend in the proportion of cases across age groups
+# Ha: There is a linear trend in the proportion of cases across age groups
+
+
+
+##############################################
+##### Number of Cases and Secondary Cases ####
+
+cat("Load\n")
+Table2012=read.csv(file=paste0(writingDir,"Feb 14 Results/", as.character(2012), " Results","/PairsDistanceInfoTable.csv"))
+Table2013=read.csv(file=paste0(writingDir,"Feb 14 Results/", as.character(2013), " Results","/PairsDistanceInfoTable.csv"))
+Table2014=read.csv(file=paste0(writingDir,"Feb 14 Results/", as.character(2014), " Results","/PairsDistanceInfoTable.csv"))
+Table2015=read.csv(file=paste0(writingDir,"Feb 14 Results/", as.character(2015), " Results","/PairsDistanceInfoTable.csv"))
+
+Freq2012=as.data.frame((table(Table2012$Source)), stringsAsFactors = F)
+Freq2013=as.data.frame((table(Table2013$Source)), stringsAsFactors = F)
+Freq2014=as.data.frame((table(Table2014$Source)), stringsAsFactors = F)
+Freq2015=as.data.frame((table(Table2015$Source)), stringsAsFactors = F)
+
+TableFreq2012=merge(Table2012, Freq2012, by.x="Source", by.y="Var1", all.x=T)
+TableFreq2013=merge(Table2013, Freq2013, by.x="Source", by.y="Var1", all.x=T)
+TableFreq2014=merge(Table2014, Freq2014, by.x="Source", by.y="Var1", all.x=T)
+TableFreq2015=merge(Table2015, Freq2015, by.x="Source", by.y="Var1", all.x=T)
+
+# 2012
+TableFreq2012$CaseRank=rank(TableFreq2012$SourceCases, ties.method = "average")
+TableFreq2012$FreqRank=rank(TableFreq2012$Freq, ties.method = "average")
+cor.test(TableFreq2012$CaseRank, TableFreq2012$FreqRank, method = "spearman")
+# 2013
+TableFreq2013$CaseRank=rank(TableFreq2013$SourceCases, ties.method = "average")
+TableFreq2013$FreqRank=rank(TableFreq2013$Freq, ties.method = "average")
+cor.test(TableFreq2013$CaseRank, TableFreq2013$FreqRank, method = "spearman")
+# 2014
+TableFreq2014$CaseRank=rank(TableFreq2014$SourceCases, ties.method = "average")
+TableFreq2014$FreqRank=rank(TableFreq2014$Freq, ties.method = "average")
+cor.test(TableFreq2014$CaseRank, TableFreq2014$FreqRank, method = "spearman")
+# 2015
+TableFreq2015$CaseRank=rank(TableFreq2015$SourceCases, ties.method = "average")
+TableFreq2015$FreqRank=rank(TableFreq2015$Freq, ties.method = "average")
+cor.test(TableFreq2015$CaseRank, TableFreq2015$FreqRank, method = "spearman")

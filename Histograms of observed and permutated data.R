@@ -52,16 +52,15 @@ getHistograms=function(main, Day, MinimumDistances, AllPermutatationMinimumDista
   # levs = as.character(breaks + 0.01)
   levs=levs[1:length(breaks)-1]
   
-  if(Legend){
+  if(Density){
     FinalHist=multhist(l, breaks=breaks, names.arg = levs, 
-                       freq=F, xlab="Network Distances", 
+                       freq=F, xlab="Network Distance", 
                        ylab="Density", main=main, cex.axis=1, 
                        ylim=ylim, cex.main=5, cex.lab=3,
-                       legend.text=c("Permutations", "Observed"),
                        col=c("aquamarine4", "aquamarine3"))
   }else{
     FinalHist=multhist(l, breaks=breaks, names.arg = levs, 
-                       freq=F, xlab="Network Distances", 
+                       freq=T, xlab="Network Distance", 
                        ylab="Density", main=main, cex.axis=1, 
                        ylim=ylim, cex.main=5, cex.lab=3,
                        col=c("aquamarine4", "aquamarine3"))
@@ -88,68 +87,197 @@ layout(matrix(c(1,2,
                 1,2,
                 1,2,
                 1,2,
+                1,2,
+                1,2,
+                3,4,
+                3,4,
                 3,4,
                 3,4,
                 3,4,
                 3,4,
                 3,4,
                 5,5), 
-              nrow=11, byrow = TRUE))
-layout.show(n=5)
+              nrow=15, byrow = TRUE))
+# layout.show(n=5)
 
-par(mar=c(4,4,4,4))
+par(mar=c(4,4,4,0))
 
 ylim=c(0,0.4)
 # ylim=c(0,5)
 
-Cutoff=24
+Cutoff=20
 
 ##############
 #### HIST ####
 ##############
 
-#2012
-load(paste0(writingDir,"Jan 15 Results/", as.character(2012), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-load(paste0(writingDir,"Jan 15 Results/", as.character(2012), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+#2012-2015
+load(paste0(writingDir,"2012-2015 All Results/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"2012-2015 All Results/AllDistances500.RData"))
 MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
-AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+AllPermutatationMinimumDistances=AllDistances500
+Density=T
+Hist2012to2015=getHistograms("", Day, MinimumDistances, AllPermutatationMinimumDistances, breaks)
+title("2012-2015", adj=0, cex.main=1.8, font.main = 1)
+DeptTable=matrix(c(Hist2012to2015[[2]][2,1], c(1-Hist2012to2015[[2]][2,1]),
+                   Hist2012to2015[[2]][1,1], c(1-Hist2012to2015[[2]][1,1])),
+                 ncol=2, byrow=F)
+rownames(DeptTable)=c("SameDept", "DiffDept")
+colnames(DeptTable)=c("Observed", "Permutations")
+DeptTable=as.table(DeptTable)
+Test=DeptTable*100
+#Tests
+Result=chisq.test(Test)
+Result
 
-Legend=F
-Hist2012=getHistograms("2012", Day, MinimumDistances, AllPermutatationMinimumDistances, breaks)
-Hist2012
+
+dev.copy(jpeg, "Histograms FINAL V2.jpg", height=8, width=12, units="in", res=300)
+dev.copy(pdf, "Histograms FINAL V2.pdf", height=8, width=12)
+
+#2012
+load(paste0(writingDir,"500 Permutations/", as.character(2012), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"500 Permutations/", as.character(2012), " Results","/AllDistances.RData"))
+MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+AllPermutatationMinimumDistances=AllDistances
+
+Density=T
+Hist2012=getHistograms("", Day, MinimumDistances, AllPermutatationMinimumDistances, breaks)
+title("2012", adj=0, cex.main=1.8, font.main = 1)
 
 #2013
-load(paste0(writingDir,"Jan 10 Results/", as.character(2013), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-load(paste0(writingDir,"Jan 10 Results/", as.character(2013), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"500 Permutations/", as.character(2013), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"500 Permutations/", as.character(2013), " Results","/AllDistances.RData"))
 MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
-AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+AllPermutatationMinimumDistances=AllDistances
 
-Legend=F
-Hist2013=getHistograms("2013", Day, MinimumDistances, AllPermutatationMinimumDistances)
-Hist2013
+Density=T
+Hist2013=getHistograms("", Day, MinimumDistances, AllPermutatationMinimumDistances)
+title("2013", adj=0, cex.main=1.8, font.main = 1)
+
 
 #2014
-load(paste0(writingDir,"Jan 10 Results/", as.character(2014), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-load(paste0(writingDir,"Jan 10 Results/", as.character(2014), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"500 Permutations/", as.character(2014), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"500 Permutations/", as.character(2014), " Results","/AllDistances.RData"))
 MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
-AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+AllPermutatationMinimumDistances=AllDistances
 
-Legend=F
-Hist2014=getHistograms("2014", Day, MinimumDistances, AllPermutatationMinimumDistances)
-Hist2014
+Density=T
+Hist2014=getHistograms("", Day, MinimumDistances, AllPermutatationMinimumDistances)
+title("2014", adj=0, cex.main=1.8, font.main = 1)
 
 #2015
-load(paste0(writingDir,"Jan 10 Results/", as.character(2015), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
-load(paste0(writingDir,"Jan 10 Results/", as.character(2015), " Results","/AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"500 Permutations/", as.character(2015), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+load(paste0(writingDir,"500 Permutations/", as.character(2015), " Results","/AllDistances.RData"))
 MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
-AllPermutatationMinimumDistances=AllRuns_MinimumDistances_CandidateTransmitters_Permutations_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+AllPermutatationMinimumDistances=AllDistances
 
-Legend=F
-Hist2015=getHistograms("2015", Day, MinimumDistances, AllPermutatationMinimumDistances)
-Hist2015
+Density=T
+Hist2015=getHistograms("", Day, MinimumDistances, AllPermutatationMinimumDistances)
+title("2015", adj=0, cex.main=1.8, font.main = 1)
 
+# Legend
 par(mar=c(1,1,1,1))
 plot.new()
-legend(x="center",legend=c("Permutations", "Observed"),
+legend(x="center",legend=c("Mean of 500 Permutations", "Observed Data"),
        horiz = TRUE, fill=c("aquamarine4", "aquamarine3"))
 
+dev.off()
+
+######################################################
+#### Chi2 Test: same department vs. non-same dept ####
+
+getChi2TestSameVSDiffDept_Density=function(Year){
+  load(paste0(writingDir,"500 Permutations/", as.character(Year), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+  load(paste0(writingDir,"500 Permutations/", as.character(Year), " Results","/AllDistances.RData"))
+  MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+  AllPermutatationMinimumDistances=AllDistances
+  
+  Density=T
+  Hist=getHistograms("", Day, MinimumDistances, AllPermutatationMinimumDistances, breaks)
+  
+  DeptTable=matrix(c(Hist[[2]][2,1], c(1-Hist[[2]][2,1]),
+                     Hist[[2]][1,1], c(1-Hist[[2]][1,1])),
+                   ncol=2, byrow=F)
+  rownames(DeptTable)=c("SameDept", "DiffDept")
+  colnames(DeptTable)=c("Observed", "Permutations")
+  DeptTable=as.table(DeptTable)
+  DeptTable
+  #Tests
+  Result=chisq.test(DeptTable[1,], DeptTable[2,])
+  return(Result)
+}
+getChi2TestSameVSDiffDept_Counts=function(Year){
+  load(paste0(writingDir,"500 Permutations/", as.character(Year), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+  load(paste0(writingDir,"500 Permutations/", as.character(Year), " Results","/AllDistances.RData"))
+  MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+  AllPermutatationMinimumDistances=AllDistances
+  Density=F
+  Hist=getHistograms("", Day, MinimumDistances, AllPermutatationMinimumDistances, breaks)
+  DeptTable=matrix(c(Hist[[2]][2,1], sum(Hist[[2]][2,2:length(Hist[[2]][2,])]),
+                     Hist[[2]][1,1], sum(Hist[[2]][1,2:length(Hist[[2]][1,])])),
+                   ncol=2, byrow=F)
+  rownames(DeptTable)=c("SameDept", "DiffDept")
+  colnames(DeptTable)=c("Observed", "Permutations")
+  DeptTable=as.table(DeptTable)
+  DeptTable
+  #Tests
+  Result=chisq.test(DeptTable[1,], DeptTable[2,])
+  return(Result)
+}
+getChi2TestAllDept_Density=function(Year){
+  load(paste0(writingDir,"500 Permutations/", as.character(Year), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+  load(paste0(writingDir,"500 Permutations/", as.character(Year), " Results","/AllDistances.RData"))
+  MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+  AllPermutatationMinimumDistances=AllDistances
+  Density=T
+  Hist=getHistograms("", Day, MinimumDistances, AllPermutatationMinimumDistances, breaks)
+  DeptTable=matrix(c(Hist[[2]][2,],
+                     Hist[[2]][1,]),
+                   ncol=2, byrow=F)
+  DeptTable=as.table(DeptTable)
+  DeptTable
+  #Tests
+  Result=wilcox.test(DeptTable[,1], DeptTable[,2], paired=T)
+  return(Result)
+}
+
+getChi2TestSameVSDiffDept_Density(2012)
+getChi2TestSameVSDiffDept_Density(2013)
+getChi2TestSameVSDiffDept_Density(2014)
+getChi2TestSameVSDiffDept_Density(2015)
+
+getChi2TestSameVSDiffDept_Counts(2012)
+getChi2TestSameVSDiffDept_Counts(2013)
+getChi2TestSameVSDiffDept_Counts(2014)
+getChi2TestSameVSDiffDept_Counts(2015)
+
+getChi2TestAllDept_Density(2012)
+getChi2TestAllDept_Density(2013)
+getChi2TestAllDept_Density(2014)
+getChi2TestAllDept_Density(2015)
+
+
+#########################
+#### Prop trend test ####
+
+getSameDept=function(Year){
+  load(paste0(writingDir,"500 Permutations/", as.character(Year), " Results","/MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding.RData"))
+  load(paste0(writingDir,"500 Permutations/", as.character(Year), " Results","/AllDistances.RData"))
+  MinimumDistances=MinimumDistances_byDay_byMechanism_SharedDept_Reshuffled_Sliding
+  AllPermutatationMinimumDistances=AllDistances
+  Density=F
+  Hist=getHistograms("", Day, MinimumDistances, AllPermutatationMinimumDistances, breaks)
+  NumberObservedSameDept=Hist[[2]][2,1]
+  return(NumberObservedSameDept)
+}
+
+
+ObservedSameDept=c(getSameDept(2012),
+                       getSameDept(2013),
+                       getSameDept(2014),
+                       getSameDept(2015))
+ObservedSameDept
+
+Observed=c(97,176,307,496)
+
+prop.trend.test(ObservedSameDept, Observed)

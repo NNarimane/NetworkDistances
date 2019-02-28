@@ -25,29 +25,36 @@ source("NetworkDistances/Can CPE episodes be explained by transfer network (Func
 #############################
 #### LOAD PMSI 2014 DATA ####
 
-cat("Upload Hospital Transfer Network\n")
-load("C:/Users/Narimane/Desktop/Hospital Network Data/directed.graph_ALL.RData")
-load("C:/Users/Narimane/Desktop/Hospital Network Data/undirected.graph_ALL.RData")
+# cat("Upload Hospital Transfer Network\n")
+# load("C:/Users/Narimane/Desktop/Hospital Network Data/directed.graph_ALL.RData")
+# load("C:/Users/Narimane/Desktop/Hospital Network Data/undirected.graph_ALL.RData")
+# 
+# cat("Upload 2014 ALL PMSI Data\n")
+# load("C:/Users/Narimane/Desktop/Hospital Network Data/PMSI_ALL.RData")
+# load("C:/Users/Narimane/Desktop/Hospital Network Data/pFlow_ALL.RData")
 
-cat("Upload 2014 ALL PMSI Data\n")
-load("C:/Users/Narimane/Desktop/Hospital Network Data/PMSI_ALL.RData")
-load("C:/Users/Narimane/Desktop/Hospital Network Data/pFlow_ALL.RData")
-
+# Load fixed graph *sent in 2019*
+load(paste0(getwd(),"/Data/Fixed/matrix_bydep.RData"))
+load(paste0(getwd(),"/Data/Fixed/matrix_all.RData"))
 
 ########################
 #### GET DEPT GRAPH ####
 
-#Get Hopital Dept
-hospital_depts=substr(rownames(pFlow_ALL), 1, 2)
-pFlow_ALL_Dept=pFlow_ALL
-dimnames(pFlow_ALL_Dept) = list(hospital_depts, hospital_depts)
-
-#Compress Matrix
-pFlow_ALL_Dept = pFlow_ALL_Dept %*% sapply(unique(hospital_depts),"==", hospital_depts)
-pFlow_ALL_Dept = t(pFlow_ALL_Dept) %*% sapply(unique(hospital_depts),"==", hospital_depts)
+# #Get Hopital Dept
+# hospital_depts=substr(rownames(pFlow_ALL), 1, 2)
+# pFlow_ALL_Dept=pFlow_ALL
+# dimnames(pFlow_ALL_Dept) = list(hospital_depts, hospital_depts)
+# 
+# #Compress Matrix
+# pFlow_ALL_Dept = pFlow_ALL_Dept %*% sapply(unique(hospital_depts),"==", hospital_depts)
+# pFlow_ALL_Dept = t(pFlow_ALL_Dept) %*% sapply(unique(hospital_depts),"==", hospital_depts)
+# 
+# #Get directed graph
+# directed.graph_Dept = graph.adjacency(pFlow_ALL_Dept, mode="directed", diag=FALSE, weighted=TRUE)
 
 #Get directed graph
-directed.graph_Dept = graph.adjacency(pFlow_ALL_Dept, mode="directed", diag=FALSE, weighted=TRUE)
+directed.graph_Dept = graph.adjacency(matrix_bydep, mode="directed", diag=FALSE, weighted=TRUE)
+directed.graph_ALL = graph.adjacency(matrix_all, mode="directed", diag=FALSE, weighted=TRUE)
 
 ###################
 #### Stay Data ####
@@ -90,7 +97,7 @@ Edges_Stays=getStayData_2012()
 # Function for 2013-2015
 getStayData=function(Year){
   #MCO
-  MCO=read.csv(file = paste0("C:/Users/Narimane/Dropbox/Network Distances and CPE Episodes/Data/MCO_", Year, ".csv"), sep=";")
+  MCO=read.csv(file = paste0(getwd(),"/Data/MCO_", Year, ".csv"), sep=";")
   
   SEJHC_MCO1=as.data.frame(cbind(as.character(MCO$FI), MCO$SEJHC_MCO), stringsAsFactors = F)
   # Fix 2A & 2B
@@ -111,7 +118,7 @@ getStayData=function(Year){
   SEJHC_MCO2_Sum=aggregate(SEJHC_MCO2[,2], by=list(SEJHC_MCO2[,1]), FUN=sum, na.rm=TRUE)
   
   #SSR
-  SSR=read.csv(file = paste0("C:/Users/Narimane/Dropbox/Network Distances and CPE Episodes/Data/SSR_", Year, ".csv"), sep=";")
+  SSR=read.csv(file = paste0(getwd(),"/Data/SSR_", Year, ".csv"), sep=";")
   
   SEJHC_SSR1=as.data.frame(cbind(as.character(SSR$FI), SSR$SEJHC), stringsAsFactors = F)
   # Fix 2A & 2B
@@ -229,7 +236,7 @@ Distances_Matrix=as.data.frame(distances(directed.graph_Dept, mode="in", weights
 #### Save ####
 
 cat("Save new network")
-save(directed.graph_Dept, file="Data/Department Network (Edge Weights Over Stays) 2014 Fixed.RData")
+save(directed.graph_Dept, file="Data/Department Network (Edge Weights Over Stays) 2014 Fixed WITH DEPT 08 09.RData")
 
 
 
